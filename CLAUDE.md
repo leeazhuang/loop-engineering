@@ -6,30 +6,25 @@
 > ⚠️ 当前为 **C 档（评判通过即自动合并 main）**，风险最高。护栏全开。
 > 想更安全：见 `README.md` 的「降级到 B 档」。
 
-## 启动前必须填的占位符
+## 启动前的唯一配置
 
-把以下占位符在对应文件里全局替换成你项目的真实值：
+**所有命令和参数都在一个文件里：`.claude/loop.env`。** 套用到新项目时，你只改这一个文件，其余文件不用动。
 
-| 占位符 | 含义 | 示例 |
-|--------|------|------|
-| `<test_command>` | 跑测试 | `npm test` / `pytest` / `mvn test` |
-| `<lint_command>` | 跑 lint | `npm run lint` / `ruff check .` |
-| `<build_command>` | 构建 | `npm run build` / `mvn -q -DskipTests package` |
-| `<run_command>` | 启动（评判器动手验证用） | `npm start` |
-| `<main_branch>` | 主分支 | `main` |
-| `<project_conventions>` | 项目规约（命名/分层/测试约定） | 自由文本 |
-| `<mcp_config>` | 外部连接（可选） | GitHub/issue/Slack MCP |
-| `<max_fix_attempts>` | 验证打回重试上限 | `3` |
-| `<per_loop_budget>` | 单圈 token 预算 | `200000` |
-| `<daily_budget>` | 每日 token 预算 | `2000000` |
-| `<max_retries>` | 单圈最大工具重试 | `5` |
+需要填的键：`TEST_CMD` / `LINT_CMD` / `BUILD_CMD` / `RUN_CMD` / `MAIN_BRANCH` / `AUTO_MERGE`(C档=true,B档=false) / `MAX_FIX_ATTEMPTS` / `PER_LOOP_BUDGET` / `DAILY_BUDGET` / `MAX_RETRIES` / `MCP_CONFIG`(可选)。
+
+**项目规约**（命名/分层/测试约定等给模型读的自由文本）写在下方「项目规约」一节，不放 loop.env。
+
+## 项目规约
+
+<!-- 在这里写本项目的约定：目录结构、命名、测试规范、不可触碰的区域等。generator/evaluator 会读这里。 -->
+（套用到新项目后填写）
 
 ## 安全约定（强制）
 
 1. **一圈只推进一个任务**，控制影响面。
 2. **生成者与评判者必须是不同子 agent**，绝不让写代码的 agent 给自己打分。
 3. **任何 gate 不过 → 不推进，写入 `.claude/memory/inbox.md` 等人**。绝不绕过硬门、绝不 `--no-verify`、绝不删测试来"过关"。
-4. **禁止**：`git push --force` 到 `<main_branch>`、`git reset --hard`、`rm -rf`、删分支、改 CI 配置。这些由 `danger-guard.sh` 拦截，也是你的红线。
+4. **禁止**：`git push --force` 到主分支、`git reset --hard`、`rm -rf`、删分支、改 CI 配置。这些由 `danger-guard.sh` 拦截，也是你的红线。
 5. 能写死规则的判断交给 hook，不交给模型。
 
 ## 三种急停
@@ -40,4 +35,4 @@
 
 ## 一圈流程
 
-详见 `.claude/loop.md`。启动：填好占位符后运行 `/loop 30m`。
+详见 `.claude/loop.md`。启动：填好 `.claude/loop.env` 后运行 `/loop 30m`。

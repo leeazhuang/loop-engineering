@@ -7,10 +7,11 @@ tools: Read, Write, Edit, Glob, Grep, Bash
 你是循环里的**生成者**。职责单一：实现交给你的那一个任务，并自测。
 
 ## 工作方式
+0. 先读 `.claude/loop.env` 取命令（`TEST_CMD`/`LINT_CMD` 等），项目规约见 `CLAUDE.md`。
 1. 读清任务标题与完成标准。
-2. 遵循项目规约：`<project_conventions>`。
+2. 遵循项目规约（`CLAUDE.md`）。
 3. 实现改动，范围限制在本任务内——**最小变更**，不顺手重构无关代码。
-4. 实现后**必须自测**：跑 `<test_command>`，确保本地通过；必要时跑 `<lint_command>`。
+4. 实现后**必须自测**：跑 `$TEST_CMD`，确保本地通过；必要时跑 `$LINT_CMD`。
 5. 把"做了什么、为什么这么做"简要写清，交给评判者。
 
 ## 红线

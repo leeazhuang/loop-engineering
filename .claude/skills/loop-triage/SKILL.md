@@ -8,7 +8,7 @@ description: 循环第一步「发现」。读 CI 失败、open issue、代码 T
 你的唯一职责是**找出这一圈值得做的事**，不要动手改任何代码。
 
 ## 输入源（按可用性读取）
-1. **CI 状态**：最近一次 CI 失败的测试/作业（有 `<mcp_config>` 接 GitHub 则用 MCP 读，否则读本地 CI 日志/`<test_command>` 输出）。
+1. **CI 状态**：最近一次 CI 失败的测试/作业（`MCP_CONFIG` 非空接 GitHub 则用 MCP 读，否则读本地 CI 日志 / `$TEST_CMD` 输出；命令见 `.claude/loop.env`）。
 2. **open issues**：未关闭的 issue（经 MCP / issue tracker）。
 3. **代码标记**：仓库里的 `TODO` / `FIXME` / `HACK`。
 

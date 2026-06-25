@@ -7,6 +7,10 @@
 
 set -u
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ENV_FILE="$SCRIPT_DIR/../loop.env"
+[ -f "$ENV_FILE" ] && . "$ENV_FILE"
+
 INPUT="$(cat)"
 
 # 取出将要执行的命令文本（有 jq 用 jq，否则退化为整段匹配）
@@ -36,5 +40,10 @@ case "$CMD" in
   *"mkfs"*|*"dd if="*)                            block "磁盘破坏命令" ;;
 esac
 
-# 拦截向主分支强推（占位符 <main_branch>，已被通用 force 规则覆盖，这里留作显式提醒位）
+# 显式拦截向主分支的直接 push（即使非 force；C档由循环自动合并，人/agent 不应手动直推主分支）
+MB="${MAIN_BRANCH:-main}"
+case "$CMD" in
+  *"git push"*"$MB"*) block "直接 push 到主分支 $MB" ;;
+esac
+
 exit 0

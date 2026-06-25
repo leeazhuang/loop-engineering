@@ -1,24 +1,22 @@
 #!/usr/bin/env bash
 # token-guard.sh —— 预算守卫 (PreToolUse hook)
-# 作用：每次工具调用前计数，超过单圈/每日/重试上限即阻断，防空转 bug 烧光额度。
-# 计数落在 .claude/memory/budget.json。
+# 作用：每次工具调用前计数，超过单圈/每日上限即阻断，防空转 bug 烧光额度。
+# 配置来自 .claude/loop.env；计数落在 .claude/memory/budget.json。
 #
 # 退出码：0 = 放行；2 = 阻断（超预算）。
 
 set -u
 
-# ↓↓↓ 预算上限（占位符，按需调整）↓↓↓
-PER_LOOP_BUDGET="<per_loop_budget>"   # 单圈最大工具调用次数，例如 200
-DAILY_BUDGET="<daily_budget>"         # 每日最大工具调用次数，例如 2000
-MAX_RETRIES="<max_retries>"           # 预留：单圈最大重试，例如 5
-# ↑↑↑
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ENV_FILE="$SCRIPT_DIR/../loop.env"
+[ -f "$ENV_FILE" ] && . "$ENV_FILE"
 
-BUDGET_FILE=".claude/memory/budget.json"
+BUDGET_FILE="$SCRIPT_DIR/../memory/budget.json"
 TODAY="$(date +%F)"
 
-# 占位符未替换 → 不阻断，但提醒
-case "$PER_LOOP_BUDGET$DAILY_BUDGET" in
-  *"<"*">"*) echo "[token-guard] 预算占位符未替换，跳过守卫。请在 token-guard.sh 填入数字。" >&2; exit 0 ;;
+# 占位符/空值 → 不阻断，但提醒
+case "${PER_LOOP_BUDGET:-}${DAILY_BUDGET:-}" in
+  *"<"*">"*|"") echo "[token-guard] loop.env 预算未填，跳过守卫。请编辑 .claude/loop.env。" >&2; exit 0 ;;
 esac
 
 # 无 jq 则降级为不阻断（提醒）
@@ -50,4 +48,4 @@ if [ "$LOOP_CALLS" -gt "$PER_LOOP_BUDGET" ]; then
 fi
 
 exit 0
-# 注：每圈开始时应把 loop_calls 归零（在 loop.md 第 0 步可加：jq '.loop_calls=0' 重置）。
+# 注：每圈开始时应把 loop_calls 归零（loop.md 第 0 步会重置）。

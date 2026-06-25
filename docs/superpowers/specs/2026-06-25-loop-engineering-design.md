@@ -29,10 +29,15 @@
 
 ## 3. 目录结构
 
+> **复用机制（方式 B）**：所有命令/参数集中在唯一文件 `.claude/loop.env`，hook 用 `source` 读取、skill/agent 被指示先读它；`install-loop.sh` 一键把模板装进任意项目。换项目 = 跑安装脚本 + 改一个 `loop.env`。档位 C/B 由 `loop.env` 的 `AUTO_MERGE` 一个值切换。
+
 ```
 项目根/
-├── CLAUDE.md                    # loop 总纲：占位符、急停、安全约定
-├── README.md                    # 5 分钟上手 + 占位符清单 + 上云/降级
+├── CLAUDE.md                    # loop 总纲：配置指引、项目规约、急停、安全约定
+├── README.md                    # 上手 + Windows 必做 + 档位切换 + 上云
+├── install-loop.sh              # 一键安装到任意项目
+├── .gitattributes               # 强制 .sh 为 LF（Windows CRLF 坑）
+│   └── .claude/loop.env         # ★唯一配置文件（命令/参数/档位）
 ├── .claude/
 │   ├── loop.md                  # 裸 /loop 执行的一圈编排
 │   ├── settings.json            # 注册 hooks + 占位 MCP

@@ -2,9 +2,10 @@
 
 每次 `/loop` 触发，按顺序执行以下一圈。**严格按步骤，不要跳步。**
 
-## 第 0 步 · 急停检测
+## 第 0 步 · 急停检测 + 重置单圈计数
 - 如果 `.claude/memory/STOP` 文件存在 → 立即结束本圈，什么都不做。
-- 否则继续。
+- 否则：把 `.claude/memory/budget.json` 的 `loop_calls` 归零（单圈预算重新计），继续。
+- 所有命令/参数都从 `.claude/loop.env` 读取（唯一配置文件）。
 
 ## 第 1 步 · 发现（discovery）
 - 触发技能：`loop-triage`（不要在这里贴大段指令）。
@@ -22,13 +23,13 @@
 ## 第 4 步 · 验证（verification）
 - 触发技能：`loop-review`。
 - 它派 `evaluator` 子 agent（指令不同、可换模型、默认怀疑、会动手跑命令）审查。
-- 评判不过 → 退回 `generator` 修改，最多 `<max_fix_attempts>` 次。
+- 评判不过 → 退回 `generator` 修改，最多 `$MAX_FIX_ATTEMPTS` 次（见 loop.env）。
 - 仍不过 → **不推进**，把任务连同失败原因写进 `inbox.md`，跳到第 6 步。
 - 注意：合并前还有 `gate-stop.sh` 硬门（test/lint/build 全绿），LLM 跳不过。
 
 ## 第 5 步 · 持久化（persistence）
 - 触发技能：`loop-persist`。
-- 开 PR；**C 档**：全绿 + 评判通过 → 自动合并到 `<main_branch>`。
+- 开 PR；`AUTO_MERGE=true`（C 档）：全绿 + 评判通过 → 自动合并到 `$MAIN_BRANCH`；`AUTO_MERGE=false`（B 档）：只开 PR 等人（均见 loop.env）。
 - 更新 `loop-state.md`：任务移到「已完成」，记录 PR/合并信息。
 
 ## 第 6 步 · 调度游标（scheduling）
