@@ -1,0 +1,42 @@
+{
+  "$comment": "Loop 工程 hooks 注册。三道确定性 gate：全绿门(Stop) + 预算守卫(PreToolUse) + 危险拦截(PreToolUse)。MCP connector 占位见下。",
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/gate-stop.sh"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/danger-guard.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/token-guard.sh"
+          }
+        ]
+      }
+    ]
+  },
+  "$mcp_placeholder": {
+    "$comment": "可选：接外部系统（白皮书零件4 Connectors）。把 <mcp_config> 换成真实配置，例如 GitHub / issue tracker / Slack。MCP 服务器一般配在 .mcp.json 或此处的 mcpServers 字段。",
+    "mcpServers": {
+      "<mcp_config>": {}
+    }
+  }
+}
