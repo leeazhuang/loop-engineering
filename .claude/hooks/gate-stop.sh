@@ -12,19 +12,24 @@ MAIN_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 ENV_FILE="$SCRIPT_DIR/../loop.env"
 [ -f "$ENV_FILE" ] && . "$ENV_FILE"
 
-# 在哪棵树上跑全绿门？本圈改动在 git worktree 里（见 loop-implement），不在主仓库工作树。
-# loop-implement 开 worktree 时会把其绝对路径写进 .claude/memory/current-worktree。
-# 有它且指向有效目录 → 进 worktree 验本圈改动（门才守在改动上）；否则退回主仓库根（体检主分支基线）。
+# 只在「有活跃圈」时把门。current-worktree 由 loop-implement 开 worktree 时写入、loop-persist
+# 收尾时删除；没有它就代表当前没有进行中的循环改动。此时直接放行（exit 0），原因有二：
+#   1) 不要在仓库里每次普通对话/手动收尾都跑一遍全量 test/lint/build（昂贵且打断交互）；
+#   2) 验证多次不过的「放弃→写 inbox→结束本圈」路径会先删掉 current-worktree，
+#      若门仍按红代码拦截 Stop，agent 就没法干净地结束本圈（被自己的门锁住）。
+# 合并前的硬门由 loop-persist 显式调用本脚本来把（那时 current-worktree 还在，指向待验 worktree）。
 WT_FILE="$SCRIPT_DIR/../memory/current-worktree"
+if [ ! -f "$WT_FILE" ]; then
+  echo "[gate-stop] 无活跃圈（current-worktree 不存在），跳过门禁。" >&2
+  exit 0
+fi
 PROJECT_ROOT="$MAIN_ROOT"
-if [ -f "$WT_FILE" ]; then
-  WT="$(head -n1 "$WT_FILE" 2>/dev/null | tr -d '\r')"   # 去 Windows \r，不动路径里的空格
-  if [ -n "$WT" ] && [ -d "$WT" ]; then
-    PROJECT_ROOT="$WT"
-    echo "[gate-stop] 在当前 worktree 上验证本圈改动：$WT" >&2
-  else
-    echo "[gate-stop] ⚠ current-worktree 记录无效（'$WT'），退回主仓库根验证。" >&2
-  fi
+WT="$(head -n1 "$WT_FILE" 2>/dev/null | tr -d '\r')"   # 去 Windows \r，不动路径里的空格
+if [ -n "$WT" ] && [ -d "$WT" ]; then
+  PROJECT_ROOT="$WT"
+  echo "[gate-stop] 在当前 worktree 上验证本圈改动：$WT" >&2
+else
+  echo "[gate-stop] ⚠ current-worktree 记录无效（'$WT'），退回主仓库根验证。" >&2
 fi
 
 fail() {
