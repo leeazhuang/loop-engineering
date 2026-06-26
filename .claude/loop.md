@@ -10,7 +10,7 @@
 
 ## 第 1 步 · 发现（discovery）
 - 触发技能：`loop-triage`（不要在这里贴大段指令）。
-- 它会读 CI 失败 / open issue / 代码里的 `TODO`/`FIXME`，把值得做的写进 `.claude/memory/loop-state.md` 的「待办」区；处理不了的写进 `.claude/memory/inbox.md`。
+- 它会读**需求文档**（项目根 `需求文档.md` / `需求/*.md` / `BACKLOG.md`，绿地从零造东西的主入口）、CI 失败、open issue、代码里的 `TODO`/`FIXME`，把值得做的拆成任务写进 `.claude/memory/loop-state.md` 的「待办」区；处理不了的写进 `.claude/memory/inbox.md`。
 - 如果「待办」为空 → 结束本圈（没有活，不空转）。
 
 ## 第 2 步 · 取任务

@@ -11,7 +11,10 @@
 - **Claude Code CLI**：本工程是 Claude Code 的脚手架，所有 skill / 子 agent / hook 都靠它执行。
 - **bash**：hook 由 `bash .claude/hooks/*.sh` 调起。Windows 用 git-bash 的 bash（装了 Git 即有），需在 PATH。
 - **git**：循环用 `git worktree` 隔离每个任务。
-- **jq + gh**：jq 是预算守卫/危险拦截精确解析的硬前提，gh 用于开 PR/合并；`install-loop.sh` 会自动装、缺则中止，装好后 `gh auth login` 登录一次。
+- **jq + gh**：jq 是预算守卫/危险拦截精确解析的硬前提，gh 用于开 PR/合并。`install-loop.sh` 会**尝试**自动装（scoop/choco/winget/brew/apt），但**自动安装可能失败**——尤其 Windows git-bash 调 winget 常报 `Permission denied`。此时请在**真实终端（PowerShell/CMD）**手动装：
+  - Windows（任选）：`scoop install jq gh` ／ `choco install jq gh -y` ／ `winget install jqlang.jq` + `winget install GitHub.cli`
+  - macOS：`brew install jq gh`　Linux：`sudo apt-get install jq gh`
+  - 装好后 `gh auth login` 登录一次。**缺 jq 时预算守卫会失效（仅大声告警并拦住 Bash），务必先装好再跑循环。**
 - **Node / npx**：前端评判用的 Playwright MCP 靠 `npx @playwright/mcp`（首次自动下载）；纯后端可不需要。
 
 **目标项目要求**：必须是 **git 仓库**、有主分支（默认 `main`）、且**已连 GitHub 远程**——`loop-implement` 用 `git worktree` 隔离、`loop-persist` 用 `gh pr create` 开 PR，缺远程会卡在持久化阶段。
@@ -51,6 +54,37 @@ bash install-loop.sh <目标项目目录>
 1. **bash 必须在 PATH**：用 git-bash 的 bash，hook 才能被 `settings.json` 里 `bash .claude/hooks/*.sh` 调起。
 2. **换行**：`.gitattributes` 已强制 `.sh` 为 LF（CRLF 会让 bash 报 `\r` 错）。
 3. **首次冒烟验证**：让 agent 试跑一条 `rm -rf` 看 `danger-guard` 是否拦下（退出码 2）。不灵则说明 hook 没被正确调用，改用 `cmd /c` 包装命令重试。
+
+## 把你的想法/需求喂进循环（绿地从零开始）
+
+循环的第一步「发现」(`loop-triage`) 会从四个来源找活，**第一优先就是你的需求文档**：
+
+| 来源 | 适合 | 怎么用 |
+|------|------|--------|
+| **需求文档** | 绿地从零造东西（你的主入口） | 在项目根写 `需求文档.md`（或 `需求/*.md`、`BACKLOG.md`），triage 把每条功能需求拆成可独立交付的任务 |
+| open issue | 已有项目的待办 | 把需求写成 GitHub issue（需在 `.mcp.json` 加 github 连接器，见 `.mcp.json.example`） |
+| CI 失败 | 修红 | 自动读 |
+| 代码 `TODO`/`FIXME` | 边写边记的小活 | 自动读 |
+
+**所以最简单的开干姿势**：
+
+```
+1. 新建空 git 仓库（连好 GitHub 远程）
+2. bash install-loop.sh <你的项目>，填好 .claude/loop.env（模式+语言+命令）
+3. 在项目根写 需求文档.md —— 把你的想法写成一条条功能需求 + 完成标准
+4. 跑 /loop-cycle：triage 读需求文档→拆任务→generator 实现→evaluator 验证→（C档）合并
+5. 需求做完了就再往 需求文档.md / BACKLOG.md 追加新需求，循环继续
+```
+
+> 需求写得越具体（接口/字段/完成标准越清晰），triage 拆得越准、交付越稳。写不清的会被丢进 `inbox.md` 等你补充，不会瞎猜。
+
+`需求文档.md` 示例（最小）：
+```markdown
+# 需求：待办 API
+1. POST /todos 新建（字段 title）  | 完成标准: 返回201+id，pytest覆盖
+2. GET /todos 列出全部            | 完成标准: 返回数组，pytest覆盖
+技术约定: Python+FastAPI，内存存储，pytest
+```
 
 ## 启动
 

@@ -21,7 +21,7 @@ fail() {
 run_side() {
   local name="$1" dir="$2" t="$3" l="$4" b="$5"
   case "$t$l$b" in
-    *"<"*">"*|"") echo "[gate-stop] $name 命令未填，跳过该侧（不安全）。请编辑 .claude/loop.env。" >&2; return 0 ;;
+    *"<"*">"*|"") echo "[gate-stop] ⚠ $name 命令未填（占位符/空），跳过该侧门禁——未配置=未验证。合并前的硬卡在 loop-persist：未配置侧禁止自动合并。请尽快编辑 .claude/loop.env。" >&2; return 0 ;;
   esac
   local d="$PROJECT_ROOT/$dir"
   echo "[gate-stop] === $name 全绿门 (dir=$dir) ===" >&2

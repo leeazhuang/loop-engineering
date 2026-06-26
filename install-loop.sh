@@ -28,14 +28,18 @@ SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 #   gh：loop-persist 开 PR / 合并主分支。
 # 缺失则尝试用本机包管理器安装；装不上直接中止安装（不允许在没有护栏的情况下继续）。
 # ============================================================
+# 注：Windows 上 git-bash 调 winget 常因 App Execution Alias 报 "Permission denied"，
+# 此时自动安装会失败——脚本会清楚提示，让你在 PowerShell/CMD 里手动装。scoop/choco 若装了会优先尝试。
 detect_pm() {
-  if   command -v winget  >/dev/null 2>&1; then echo winget
+  if   command -v scoop   >/dev/null 2>&1; then echo scoop
+  elif command -v choco   >/dev/null 2>&1; then echo choco
+  elif command -v winget  >/dev/null 2>&1; then echo winget
   elif command -v brew    >/dev/null 2>&1; then echo brew
   elif command -v apt-get >/dev/null 2>&1; then echo apt
   else echo ""; fi
 }
 require_dep() {
-  local bin="$1" winget_id="$2" brew_id="$3" apt_id="$4" pm
+  local bin="$1" winget_id="$2" brew_id="$3" apt_id="$4" scoop_id="$5" choco_id="$6" pm
   if command -v "$bin" >/dev/null 2>&1; then
     echo "   ✓ $bin 已就绪"
     return 0
@@ -43,22 +47,26 @@ require_dep() {
   pm="$(detect_pm)"
   echo "🔧 缺少必装依赖 $bin，尝试用 ${pm:-无可用包管理器} 安装 ..."
   case "$pm" in
+    scoop)  scoop install "$scoop_id" || true ;;
+    choco)  choco install "$choco_id" -y || true ;;
     winget) winget install --id "$winget_id" -e --source winget || true ;;
     brew)   brew install "$brew_id" || true ;;
     apt)    sudo apt-get update && sudo apt-get install -y "$apt_id" || true ;;
   esac
   if ! command -v "$bin" >/dev/null 2>&1; then
-    echo "❌ $bin 仍不可用，但它是必装依赖，安装中止。请手动安装后重试：" >&2
-    echo "   winget: winget install $winget_id" >&2
-    echo "   brew:   brew install $brew_id" >&2
-    echo "   apt:    sudo apt-get install $apt_id" >&2
+    echo "❌ $bin 仍不可用，但它是必装依赖，安装中止。请在真实终端手动安装后重试：" >&2
+    echo "   Windows(任选): scoop install $scoop_id  |  choco install $choco_id  |  winget install $winget_id" >&2
+    echo "     （winget 若在 git-bash 报 Permission denied，请改在 PowerShell/CMD 里跑）" >&2
+    echo "   macOS:  brew install $brew_id" >&2
+    echo "   Linux:  sudo apt-get install $apt_id" >&2
     exit 1
   fi
   echo "   ✓ $bin 安装完成"
 }
 echo "🔎 检查必装依赖 jq / gh ..."
-require_dep jq jqlang.jq jq jq
-require_dep gh GitHub.cli gh gh
+#          bin winget_id    brew_id apt_id scoop_id choco_id
+require_dep jq  jqlang.jq    jq      jq     jq       jq
+require_dep gh  GitHub.cli   gh      gh     gh       gh
 
 # 已存在 .claude 则备份，不覆盖用户现有配置
 if [ -e "$TARGET/.claude" ]; then

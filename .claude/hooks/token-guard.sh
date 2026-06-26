@@ -7,6 +7,9 @@
 
 set -u
 
+# 读 hook 的 stdin（含 tool_name），用于按工具类型决定无 jq 时的处置。不依赖 jq 解析（jq 正是要检测的对象）。
+INPUT="$(cat 2>/dev/null || true)"
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ENV_FILE="$SCRIPT_DIR/../loop.env"
 [ -f "$ENV_FILE" ] && . "$ENV_FILE"
@@ -19,10 +22,18 @@ case "${PER_LOOP_BUDGET:-}${DAILY_BUDGET:-}" in
   *"<"*">"*|"") echo "[token-guard] loop.env 预算未填，跳过守卫。请编辑 .claude/loop.env。" >&2; exit 0 ;;
 esac
 
-# 无 jq 则降级为不阻断（提醒）
+# 无 jq 则无法计数。jq 是预算守卫的硬前提，但不能因此把整个 agent 锁死
+# （连 Read/Write 都拦 → 连写 inbox 转人工都做不到，违背"gate 不过就写 inbox 等人"）。
+# 折中：fail-closed 只卡住烧钱/空转的主驱动 Bash；其余工具放行但大声告警，让人看见护栏没生效。
 if ! command -v jq >/dev/null 2>&1; then
-  echo "[token-guard] 未找到 jq，无法计数，跳过。建议安装 jq 以启用预算守卫。" >&2
-  exit 0
+  case "$INPUT" in
+    *'"tool_name":"Bash"'*|*'"tool_name": "Bash"'*)
+      echo "[token-guard] 未找到 jq —— 预算守卫无法计数。fail-closed：阻断 Bash（防空转烧额度）。jq 是硬前提，请先安装（见 README「前置条件」）。" >&2
+      exit 2 ;;
+    *)
+      echo "[token-guard] ⚠ 未找到 jq —— 预算守卫已失效（无法计数）！非 Bash 工具暂放行以便转人工，但请立刻安装 jq，否则 token 无上限保护。" >&2
+      exit 0 ;;
+  esac
 fi
 
 # 初始化 / 跨天重置
