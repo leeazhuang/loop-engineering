@@ -5,7 +5,7 @@
 #   bash install-loop.sh <目标项目目录>
 # 例:
 #   bash install-loop.sh /d/work/my-app
-#   bash install-loop.sh "C:/Users/Administrator/Desktop/my-app"
+#   bash install-loop.sh "C:/Users/you/Desktop/my-app"
 # 装完后：编辑 <目标>/.claude/loop.env 填好命令，即可在该项目里跑 /loop
 # ============================================================
 set -euo pipefail
@@ -21,6 +21,44 @@ if [ ! -d "$TARGET" ]; then
 fi
 
 SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# ============================================================
+# 强制依赖：jq + gh。两者是护栏的硬性前提——
+#   jq：token-guard 预算守卫精确计数、danger-guard 精确解析命令；缺了护栏会失效/退化。
+#   gh：loop-persist 开 PR / 合并主分支。
+# 缺失则尝试用本机包管理器安装；装不上直接中止安装（不允许在没有护栏的情况下继续）。
+# ============================================================
+detect_pm() {
+  if   command -v winget  >/dev/null 2>&1; then echo winget
+  elif command -v brew    >/dev/null 2>&1; then echo brew
+  elif command -v apt-get >/dev/null 2>&1; then echo apt
+  else echo ""; fi
+}
+require_dep() {
+  local bin="$1" winget_id="$2" brew_id="$3" apt_id="$4" pm
+  if command -v "$bin" >/dev/null 2>&1; then
+    echo "   ✓ $bin 已就绪"
+    return 0
+  fi
+  pm="$(detect_pm)"
+  echo "🔧 缺少必装依赖 $bin，尝试用 ${pm:-无可用包管理器} 安装 ..."
+  case "$pm" in
+    winget) winget install --id "$winget_id" -e --source winget || true ;;
+    brew)   brew install "$brew_id" || true ;;
+    apt)    sudo apt-get update && sudo apt-get install -y "$apt_id" || true ;;
+  esac
+  if ! command -v "$bin" >/dev/null 2>&1; then
+    echo "❌ $bin 仍不可用，但它是必装依赖，安装中止。请手动安装后重试：" >&2
+    echo "   winget: winget install $winget_id" >&2
+    echo "   brew:   brew install $brew_id" >&2
+    echo "   apt:    sudo apt-get install $apt_id" >&2
+    exit 1
+  fi
+  echo "   ✓ $bin 安装完成"
+}
+echo "🔎 检查必装依赖 jq / gh ..."
+require_dep jq jqlang.jq jq jq
+require_dep gh GitHub.cli gh gh
 
 # 已存在 .claude 则备份，不覆盖用户现有配置
 if [ -e "$TARGET/.claude" ]; then
@@ -66,6 +104,6 @@ echo "✅ 安装完成。下一步："
 echo "   1. 编辑 $TARGET/.claude/loop.env  先选 PROJECT_MODE，再填对应侧 FE_LANG/FE_* 与 BE_LANG/BE_*"
 echo "      （.mcp.json 已附带 Playwright，前端评判 clone 即用；要加 GitHub/DB 见 .mcp.json.example）"
 echo "   2. 在 CLAUDE.md 的「项目规约」一节写本项目约定"
-echo "   3. (Windows) 确保 git-bash 的 bash 在 PATH；建议装 jq、gh"
+echo "   3. (Windows) 确保 git-bash 的 bash 在 PATH；jq/gh 已由本脚本装好，记得 gh auth login 登录一次"
 echo "   4. 想更安全：把 loop.env 的 AUTO_MERGE 设为 false（B档：只开PR不自动合并）"
 echo "   5. 在该项目里运行: /loop 30m"

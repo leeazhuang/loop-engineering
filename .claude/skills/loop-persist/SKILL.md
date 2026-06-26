@@ -18,7 +18,7 @@ description: 循环第四步「持久化」。开 PR，C 档下自动合并 main
    - 切换档位只需改 loop.env 里的 `AUTO_MERGE`，不用动这个文件。
 3. **更新状态**：
    - `loop-state.md`：把任务从「进行中」移到「## 已完成」，记录 PR 链接 / 合并 commit / 时间。
-   - 清理用完的 worktree（cattle not pets）。
+   - 清理用完的 worktree（cattle not pets）：`git worktree remove "../loop-<任务短名>"`（合并后分支可一并删除）。
 
 ## 约束
 - 绝不 `--no-verify`、绝不 `push --force` 到 `$MAIN_BRANCH`（`danger-guard.sh` 会拦）。

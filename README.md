@@ -36,11 +36,11 @@ bash install-loop.sh <目标项目目录>
 
 ## Windows 必做（一次性）
 
-1. **bash 在 PATH**：hook 由 `settings.json` 里 `bash .claude/hooks/*.sh` 调用，需 git-bash 的 bash 可用（你已有 ✓）。
-2. **装 jq**：`winget install jqlang.jq` —— 预算守卫/危险拦截精确解析依赖它（缺了会降级跳过/粗匹配）。
-3. **装 gh 并登录**：`winget install GitHub.cli && gh auth login` —— 开 PR/合并需要（或改用 GitHub MCP）。
+1. **bash 在 PATH**：hook 由 `settings.json` 里 `bash .claude/hooks/*.sh` 调用，需 git-bash 的 bash 可用（Windows 装了 Git 即有）。
+2. **jq + gh（必装，`install-loop.sh` 会自动装）**：jq 是预算守卫/危险拦截精确解析的硬前提，gh 是开 PR/合并的硬前提——缺任一安装脚本直接中止。脚本装不上时手动装：`winget install jqlang.jq`、`winget install GitHub.cli`。
+3. **gh 登录（必做一次）**：`gh auth login` —— 自动安装不含登录，开 PR/合并前必须登录（或改用 GitHub MCP）。
 4. **换行**：`.gitattributes` 已强制 `.sh` 为 LF（CRLF 会让 bash 报 `\r` 错）。
-5. **首次冒烟验证**：让 agent 试跑一条 `rm -rf` 看 `danger-guard` 是否拦下（退出码 2）。不灵则 hook 没被正确调用，告诉我换 `cmd /c` 包装。
+5. **首次冒烟验证**：让 agent 试跑一条 `rm -rf` 看 `danger-guard` 是否拦下（退出码 2）。不灵则说明 hook 没被正确调用，改用 `cmd /c` 包装命令重试。
 
 ## 启动
 

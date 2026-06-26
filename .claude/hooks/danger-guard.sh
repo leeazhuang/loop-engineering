@@ -41,9 +41,11 @@ case "$CMD" in
 esac
 
 # 显式拦截向主分支的直接 push（即使非 force；C档由循环自动合并，人/agent 不应手动直推主分支）
+# 仅当主分支名作为完整 ref 出现时才拦（前后是空白/冒号/边界），避免误伤 feature/main-nav 这类分支名。
 MB="${MAIN_BRANCH:-main}"
-case "$CMD" in
-  *"git push"*"$MB"*) block "直接 push 到主分支 $MB" ;;
-esac
+# 边界含 " 是为兼容无 jq 时整段 JSON 匹配（命令值被引号包裹）。
+if [[ "$CMD" == *"git push"* ]] && [[ "$CMD" =~ (^|[[:space:]:\"])"$MB"([[:space:]:\"]|$) ]]; then
+  block "直接 push 到主分支 $MB"
+fi
 
 exit 0
