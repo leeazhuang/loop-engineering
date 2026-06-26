@@ -27,11 +27,16 @@ else
 fi
 [ -z "$CMD" ] && exit 0
 
-# 只管 gh pr merge（自动合并）。其它命令一律放行，不干扰正常流程。
-case "$CMD" in
-  *"gh pr merge"*) : ;;
-  *) exit 0 ;;
-esac
+# 只管「真正调用」gh pr merge（自动合并）。其它命令一律放行。
+# 收紧匹配（不是裸子串）：仅当 `gh pr merge` 出现在「命令起始位」——字符串开头或命令分隔符
+# （; & | ( { 反引号 换行）之后，允许其间有空白——才算一次真实调用。这样 commit message、
+# `echo "gh pr merge"`、`grep gh pr merge` 等只是「提及」该短语的命令不会被误拦。
+# 注：用变量承载正则（bash 中 =~ 右侧用变量才按正则解析），$'...' 让 \n 成为真实换行。
+# 中间允许多个空白，兼容 `gh  pr  merge`。
+_MG_RE=$'(^|[;&|({`\n])[[:space:]]*gh[[:space:]]+pr[[:space:]]+merge([[:space:]]|$|[;&|`])'
+if [[ ! "$CMD" =~ $_MG_RE ]]; then
+  exit 0
+fi
 
 # 占位符判定：空 或 含 <...> → 视为未配置。
 is_placeholder() {
