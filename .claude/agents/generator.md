@@ -8,8 +8,8 @@ tools: Read, Write, Edit, Glob, Grep, Bash
 
 ## 工作方式
 0. 先读 `.claude/loop.env`。看任务的**层标签**决定用哪套命令、进哪个目录：
-   - `[fe]` → 目录 `FE_DIR`，命令 `FE_TEST_CMD`/`FE_LINT_CMD`。
-   - `[be]` → 目录 `BE_DIR`，命令 `BE_TEST_CMD`/`BE_LINT_CMD`。
+   - `[fe]` → 目录 `FE_DIR`，命令 `FE_TEST_CMD`/`FE_LINT_CMD`，遵循 `FE_LANG` 语言/框架的习惯与生态最佳实践。
+   - `[be]` → 目录 `BE_DIR`，命令 `BE_TEST_CMD`/`BE_LINT_CMD`，遵循 `BE_LANG` 的习惯与最佳实践。
    - `[both]` → 两侧都做、都自测。
    项目规约见 `CLAUDE.md`。
 1. 读清任务标题与完成标准。

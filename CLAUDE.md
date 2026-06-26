@@ -10,10 +10,12 @@
 
 **所有命令和参数都在一个文件里：`.claude/loop.env`。** 套用到新项目时，你只改这一个文件，其余文件不用动。
 
-先选 **`PROJECT_MODE`**：`frontend`(纯前端) / `backend`(纯后端) / `fullstack`(前后端)。然后填对应侧命令：
-- 含前端 → `FE_DIR` / `FE_TEST_CMD` / `FE_LINT_CMD` / `FE_BUILD_CMD` / `FE_RUN_CMD`
-- 含后端 → `BE_DIR` / `BE_TEST_CMD` / `BE_LINT_CMD` / `BE_BUILD_CMD` / `BE_RUN_CMD`
-- 通用 → `MAIN_BRANCH` / `AUTO_MERGE`(C档=true,B档=false) / `MAX_FIX_ATTEMPTS` / `PER_LOOP_BUDGET` / `DAILY_BUDGET` / `MAX_RETRIES` / `MCP_CONFIG`(可选)
+先选 **`PROJECT_MODE`**：`frontend`(纯前端) / `backend`(纯后端) / `fullstack`(前后端)。然后填对应侧语言与命令：
+- 含前端 → `FE_LANG` / `FE_DIR` / `FE_TEST_CMD` / `FE_LINT_CMD` / `FE_BUILD_CMD` / `FE_RUN_CMD`
+- 含后端 → `BE_LANG` / `BE_DIR` / `BE_TEST_CMD` / `BE_LINT_CMD` / `BE_BUILD_CMD` / `BE_RUN_CMD`
+- 通用 → `MAIN_BRANCH` / `AUTO_MERGE`(C档=true,B档=false) / `MAX_FIX_ATTEMPTS` / `PER_LOOP_BUDGET` / `DAILY_BUDGET` / `MAX_RETRIES`
+
+**MCP（项目级）**：项目根的 `.mcp.json` 已自带 Playwright，clone 即用（前端评判靠它）。要加 GitHub/数据库等连接器，参考 `.mcp.json.example` 合并，token 用 `${ENV_VAR}` 不要硬编码。
 
 全栈模式下任务会被打 `[fe]`/`[be]`/`[both]` 层标签：generator 据此进对应目录，evaluator 据此选验证方式（前端走 Playwright 浏览器、后端走 API/测试），`gate-stop` 硬门两侧都跑。
 

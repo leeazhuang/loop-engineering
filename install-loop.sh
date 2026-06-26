@@ -30,9 +30,11 @@ if [ -e "$TARGET/.claude" ]; then
 fi
 
 echo "📦 拷贝模板到 $TARGET ..."
-cp -r "$SRC/.claude"        "$TARGET/.claude"
-cp -n "$SRC/CLAUDE.md"      "$TARGET/CLAUDE.md"      2>/dev/null || echo "   (保留已存在的 CLAUDE.md)"
-cp -n "$SRC/.gitattributes" "$TARGET/.gitattributes" 2>/dev/null || true
+cp -r "$SRC/.claude"          "$TARGET/.claude"
+cp -n "$SRC/CLAUDE.md"        "$TARGET/CLAUDE.md"        2>/dev/null || echo "   (保留已存在的 CLAUDE.md)"
+cp -n "$SRC/.gitattributes"   "$TARGET/.gitattributes"   2>/dev/null || true
+cp -n "$SRC/.mcp.json"        "$TARGET/.mcp.json"        2>/dev/null || echo "   (保留已存在的 .mcp.json)"
+cp -n "$SRC/.mcp.json.example" "$TARGET/.mcp.json.example" 2>/dev/null || true
 
 # 重置运行态记忆（不要把模板项目的状态带过去）
 echo '{"date":"1970-01-01","loop_calls":0,"daily_calls":0}' > "$TARGET/.claude/memory/budget.json"
@@ -61,7 +63,8 @@ chmod +x "$TARGET/.claude/hooks/"*.sh 2>/dev/null || true
 
 echo ""
 echo "✅ 安装完成。下一步："
-echo "   1. 编辑 $TARGET/.claude/loop.env  先选 PROJECT_MODE(frontend/backend/fullstack)，再填对应侧 FE_*/BE_* 命令"
+echo "   1. 编辑 $TARGET/.claude/loop.env  先选 PROJECT_MODE，再填对应侧 FE_LANG/FE_* 与 BE_LANG/BE_*"
+echo "      （.mcp.json 已附带 Playwright，前端评判 clone 即用；要加 GitHub/DB 见 .mcp.json.example）"
 echo "   2. 在 CLAUDE.md 的「项目规约」一节写本项目约定"
 echo "   3. (Windows) 确保 git-bash 的 bash 在 PATH；建议装 jq、gh"
 echo "   4. 想更安全：把 loop.env 的 AUTO_MERGE 设为 false（B档：只开PR不自动合并）"

@@ -1,3 +1,4 @@
 *.pdf
-# 真实 MCP 配置可能含 token，不提交；只提交 .mcp.json.example
-.mcp.json
+# 本仓库的 .mcp.json 不放明文密钥（用 ${ENV_VAR}），可安全提交，故不忽略。
+# 若你要放本地私有覆盖配置，用下面这个并自行 gitignore：
+.mcp.local.json

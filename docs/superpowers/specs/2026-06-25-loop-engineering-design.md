@@ -31,7 +31,9 @@
 
 > **复用机制（方式 B）**：所有命令/参数集中在唯一文件 `.claude/loop.env`，hook 用 `source` 读取、skill/agent 被指示先读它；`install-loop.sh` 一键把模板装进任意项目。换项目 = 跑安装脚本 + 改一个 `loop.env`。档位 C/B 由 `loop.env` 的 `AUTO_MERGE` 一个值切换。
 >
-> **三模式（frontend/backend/fullstack）**：`loop.env` 的 `PROJECT_MODE` 决定形态，前后端各一套命令组（`FE_*`/`BE_*` + `FE_DIR`/`BE_DIR`）。全栈下 triage 给任务打层标签 `[fe]`/`[be]`/`[both]`：generator 进对应目录、evaluator 按层选验证方式（前端 Playwright 浏览器、后端 API/测试）、`gate-stop` 硬门按模式跑（fullstack 两侧都跑，都得绿——A 档）。
+> **三模式（frontend/backend/fullstack）**：`loop.env` 的 `PROJECT_MODE` 决定形态，前后端各一套语言+命令组（`FE_LANG`/`FE_*`/`FE_DIR`、`BE_LANG`/`BE_*`/`BE_DIR`）。全栈下 triage 给任务打层标签 `[fe]`/`[be]`/`[both]`：generator 进对应目录、按对应 `*_LANG` 生态实现，evaluator 按层选验证方式（前端 Playwright 浏览器、后端 API/测试）、`gate-stop` 硬门按模式跑（fullstack 两侧都跑，都得绿——A 档）。
+>
+> **开源即用的项目级 MCP**：仓库自带 `.mcp.json`（预配 Playwright），别人 clone 无需任何全局配置即可用前端浏览器评判。项目专属连接器（GitHub/DB）参考 `.mcp.json.example` 合并，token 用 `${ENV_VAR}` 不入库。`install-loop.sh` 一并拷贝 `.mcp.json`。
 
 ```
 项目根/

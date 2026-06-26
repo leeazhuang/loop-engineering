@@ -1,19 +1,21 @@
 {
-  "_comment": "项目级 MCP 配置示例。要启用：复制本文件为 .mcp.json（去掉 .example）。Claude Code 会自动加载项目根的 .mcp.json。",
-  "_when_to_use": "仅当本项目需要专属连接器时才用。Playwright 这类通用 MCP 建议装全局（claude mcp add -s user），不要在这里重复。",
+  "_comment": "项目级 MCP 完整示例。本仓库已自带 .mcp.json（含 Playwright，clone 即用，前端评判靠它）。要加更多连接器时，把需要的条目合并进 .mcp.json。",
+  "_secret_rule": "禁止把 token 硬编码进 .mcp.json（会随仓库泄露）。用 ${ENV_VAR} 占位，真实值放各自 shell 环境变量里。",
   "mcpServers": {
-    "_playwright_note": "你已全局安装 Playwright，无需在此重复。若某项目想锁定特定版本/配置，才解开下面这段。",
-    "playwright_optional_disabled": {
+    "playwright": {
       "command": "npx",
       "args": ["-y", "@playwright/mcp@latest"]
     },
-    "_example_project_connector": "下面是项目专属连接器示例（如该项目自己的 GitHub 仓库），按需改：",
     "github": {
       "command": "npx",
       "args": ["-y", "@modelcontextprotocol/server-github"],
       "env": {
-        "GITHUB_PERSONAL_ACCESS_TOKEN": "在这里或 shell 环境里放该项目的 token"
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_PERSONAL_ACCESS_TOKEN}"
       }
+    },
+    "postgres": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-postgres", "${DATABASE_URL}"]
     }
   }
 }
