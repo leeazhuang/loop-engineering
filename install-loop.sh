@@ -22,7 +22,16 @@ fi
 
 # 整条循环硬依赖 git（worktree 隔离、gh 开 PR、合并主分支）。目标若不是 git 仓库，
 # 安装能成功但跑起来才莫名失败——这里提前清楚告警（不强制中止：用户可能装完再 git init）。
-if ! git -C "$TARGET" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+# 同时探测真实分支名与是否有提交：修两个 greenfield 首圈必崩的坑——
+#   ① git init 默认分支常是 master，而 loop.env 默认 MAIN_BRANCH=main → 开 worktree 时 ref 不存在；
+#   ② 空仓库零提交时，git worktree add <branch> 直接 fatal（没有基线 commit 可切）。
+IS_GIT=0; REAL_BRANCH=""; HAS_COMMITS=0
+if git -C "$TARGET" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  IS_GIT=1
+  # 有提交→当前分支；空仓库→HEAD 指向的待建分支名（master/main 等）
+  REAL_BRANCH="$(git -C "$TARGET" symbolic-ref --short -q HEAD 2>/dev/null || true)"
+  git -C "$TARGET" rev-parse --verify -q HEAD >/dev/null 2>&1 && HAS_COMMITS=1
+else
   echo "⚠️  目标不是 git 仓库：$TARGET" >&2
   echo "    循环依赖 git worktree / gh 开 PR / 主分支。请在该目录先：git init && 连好 GitHub 远程，再开跑。" >&2
 fi
@@ -86,6 +95,17 @@ echo "📦 拷贝模板到 $TARGET ..."
 cp -r "$SRC/.claude"          "$TARGET/.claude"
 cp -n "$SRC/.gitattributes"   "$TARGET/.gitattributes"   2>/dev/null || true
 cp -n "$SRC/.mcp.json.example" "$TARGET/.mcp.json.example" 2>/dev/null || true
+
+# 把 loop.env 的 MAIN_BRANCH 同步成目标仓库真实分支名（修 git init 默认 master 与默认 main 不一致的坑）。
+# 这样 loop-implement 用 "git worktree add ... $MAIN_BRANCH" 时 ref 一定存在。
+if [ "$IS_GIT" = "1" ] && [ -n "$REAL_BRANCH" ]; then
+  ENVF="$TARGET/.claude/loop.env"
+  if grep -q '^MAIN_BRANCH=' "$ENVF" 2>/dev/null; then
+    # 用 | 作 sed 分隔符（替换文本里含 # 注释和 / 路径，不能用它们当分隔符）
+    sed -i "s|^MAIN_BRANCH=.*|MAIN_BRANCH=\"$REAL_BRANCH\"               # 主分支名（安装时自动同步为目标仓库当前分支）|" "$ENVF"
+    echo "   ✓ MAIN_BRANCH 已同步为目标仓库分支：$REAL_BRANCH"
+  fi
+fi
 
 # 确保目标 .gitignore 忽略循环的运行态文件（current-worktree 每圈生成，绝不该入客户仓库）。
 # 新项目 git init 后无 .gitignore→创建；老项目有→缺哪条补哪条，不动其它内容。
@@ -175,6 +195,20 @@ fi
 # 确保 hook 可执行（Windows 无影响，*nix 需要）
 chmod +x "$TARGET/.claude/hooks/"*.sh 2>/dev/null || true
 
+# 空仓库（零提交）兜底：循环开 worktree 需要一个基线 commit，否则首圈 git worktree add 直接 fatal。
+# 此时刚拷进去的脚手架就是天然的第一个提交——自动建一次，让新项目真正"装完即可开干"。
+# 失败（如未配 git user.name/email）则降级为明确提示，不中断安装。
+NEED_MANUAL_COMMIT=0
+if [ "$IS_GIT" = "1" ] && [ "$HAS_COMMITS" = "0" ]; then
+  echo "🧱 目标仓库尚无提交，创建初始提交（循环开 worktree 需要基线 commit）..."
+  if git -C "$TARGET" add -A && git -C "$TARGET" commit -q -m "chore: 初始化 loop 脚手架与项目文件"; then
+    echo "   ✓ 已创建初始提交（分支 ${REAL_BRANCH:-当前分支}）"
+  else
+    NEED_MANUAL_COMMIT=1
+    echo "   ⚠ 自动初始提交失败（多半是未配置 git user.name/email）。" >&2
+  fi
+fi
+
 echo ""
 echo "✅ 安装完成。下一步："
 echo "   1. 编辑 $TARGET/.claude/loop.env  先选 PROJECT_MODE，再填对应侧 FE_LANG/FE_* 与 BE_LANG/BE_*"
@@ -187,4 +221,10 @@ echo "   6. 在该项目里运行: /loop-cycle 跑一圈；定时自动跑用 /l
 if [ "$IS_BROWNFIELD" = "1" ]; then
   echo ""
   echo "📌 检测到老项目（已有 CLAUDE.md / .mcp.json）：请先完成上面 ⚠ 提示的合并，再开跑。"
+fi
+if [ "$NEED_MANUAL_COMMIT" = "1" ]; then
+  echo ""
+  echo "❗ 仓库还没有任何提交，且自动初始提交失败。跑 /loop-cycle 前必须先手动提交一次（否则开 worktree 会失败）："
+  echo "     git -C \"$TARGET\" config user.email you@example.com && git -C \"$TARGET\" config user.name you"
+  echo "     git -C \"$TARGET\" add -A && git -C \"$TARGET\" commit -m \"chore: init\""
 fi
