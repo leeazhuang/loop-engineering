@@ -38,7 +38,7 @@
 |------|----------|--------|
 | **Claude Code CLI** | 整套循环的运行平台 | 见 Claude Code 官方 |
 | **git** | 用 `git worktree` 给每个任务开隔离工作区 | 装 Git |
-| **bash** | 跑三道护栏脚本 | Windows 用 git-bash 自带的 bash，确保在 PATH |
+| **bash** | 跑四道护栏脚本 | Windows 用 git-bash 自带的 bash，确保在 PATH |
 | **jq + gh** | jq 让护栏能精确计数/解析；gh 用来开 PR、合并 | `install-loop.sh` 会尝试自动装；失败就手动（见下） |
 | **Node / npx** | 前端评判用 Playwright 开浏览器（纯后端不需要） | 装 Node，`npx @playwright/mcp` 首次自动下载 |
 

@@ -1,5 +1,5 @@
 {
-  "$comment": "Loop 工程 hooks 注册。三道确定性 gate：全绿门(Stop) + 预算守卫(PreToolUse) + 危险拦截(PreToolUse)。Windows 必须用 'bash' 显式调用 .sh（cmd/PowerShell 不能直接执行 .sh）；要求 git-bash 的 bash 在 PATH 上。macOS/Linux 同样适用。",
+  "$comment": "Loop 工程 hooks 注册。四道确定性 gate：全绿门(Stop) + 危险拦截(PreToolUse) + 合并守卫(PreToolUse) + 预算守卫(PreToolUse)。Windows 必须用 'bash' 显式调用 .sh（cmd/PowerShell 不能直接执行 .sh）；要求 git-bash 的 bash 在 PATH 上。macOS/Linux 同样适用。",
   "$mcp_note": "MCP 配在项目根的 .mcp.json（已随仓库附带，含 Playwright，clone 即用，前端评判靠它）。要加 GitHub/数据库等连接器，参考 .mcp.json.example 合并进 .mcp.json，token 用 ${ENV_VAR} 不要硬编码。",
   "hooks": {
     "Stop": [
