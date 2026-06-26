@@ -5,6 +5,9 @@
 
 > ⚠️ 默认 **C 档：评判通过即自动合并 `main`**，风险最高。护栏全开。生产环境建议先用 B 档（见下）。
 
+> 📖 **想看懂这套循环怎么转、为什么这么设计**（分层架构、一圈逐步拆解、三道护栏、新老项目工作流、FAQ）：
+> 见 **[项目详解 · doc/项目详解.md](doc/项目详解.md)**。只想快速上手用，继续往下读本 README 即可。
+
 ## 前置条件（所有平台）
 
 跑起来需要下面这些，缺了对应环节会失败：
@@ -19,14 +22,22 @@
 
 **目标项目要求**：必须是 **git 仓库**、有主分支（默认 `main`）、且**已连 GitHub 远程**——`loop-implement` 用 `git worktree` 隔离、`loop-persist` 用 `gh pr create` 开 PR，缺远程会卡在持久化阶段。
 
-## 套用到任意项目（一键安装）
+## 套用到任意项目（一键安装·新老项目都兼容）
 
 ```bash
 bash install-loop.sh <目标项目目录>
 # 例: bash install-loop.sh /d/work/my-app
 ```
-脚本会把 `.claude/`、`CLAUDE.md`、`.gitattributes` 拷进目标项目，并重置运行态记忆。
-若目标已有 `.claude`，会自动备份不覆盖。
+脚本把 `.claude/`、`CLAUDE.md`、`.gitattributes`、`.mcp.json` 拷进目标项目，并重置运行态记忆。
+
+**新项目（绿地）**：目标是刚建、连好 GitHub 远程的空 git 仓库——直接装、直接填、直接写需求开干。
+
+**老项目（存量改造）**：直接装进现有仓库即可。为了不破坏你已有的配置，脚本**不覆盖**这些文件，而是放成 sidecar 并提示你合并：
+- 目标已有 `.claude` → 自动备份成 `.claude.bak.<时间戳>`，再装新的。
+- 目标已有 `CLAUDE.md` → 循环总纲放成 `CLAUDE.loop.md`，**你需手动把其中「安全约定」一节并入你的 `CLAUDE.md`**（否则 generator/evaluator 读不到循环安全红线）。
+- 目标已有 `.mcp.json` → 循环 MCP 放成 `.mcp.loop.json`，**含前端时把里面的 `playwright` 服务器并入你的 `.mcp.json`**（否则前端浏览器评判用不了）。
+
+> 老项目装完先完成上述合并，再按下文「老项目（存量改造）」一节写需求开跑。
 
 装完后**只需改一个文件**：`<目标>/.claude/loop.env`。
 
@@ -55,28 +66,40 @@ bash install-loop.sh <目标项目目录>
 2. **换行**：`.gitattributes` 已强制 `.sh` 为 LF（CRLF 会让 bash 报 `\r` 错）。
 3. **首次冒烟验证**：让 agent 试跑一条 `rm -rf` 看 `danger-guard` 是否拦下（退出码 2）。不灵则说明 hook 没被正确调用，改用 `cmd /c` 包装命令重试。
 
-## 把你的想法/需求喂进循环（绿地从零开始）
+## 把客户需求喂进循环（新项目 & 老项目）
 
-循环的第一步「发现」(`loop-triage`) 会从四个来源找活，**第一优先就是你的需求文档**：
+循环的第一步「发现」(`loop-triage`) 会从四个来源找活，**第一优先就是你的需求文档**——新老项目都靠它喂活：
 
 | 来源 | 适合 | 怎么用 |
 |------|------|--------|
-| **需求文档** | 绿地从零造东西（你的主入口） | 在项目根写 `需求文档.md`（或 `需求/*.md`、`BACKLOG.md`），triage 把每条功能需求拆成可独立交付的任务 |
+| **需求文档** | 新项目从零造、老项目按需改造（主入口） | 在项目根写 `需求文档.md`（或 `需求/*.md`、`BACKLOG.md`），triage 把每条需求拆成可独立交付的任务；**老项目下 triage 会先读需求关联的现有代码再拆** |
 | open issue | 已有项目的待办 | 把需求写成 GitHub issue（需在 `.mcp.json` 加 github 连接器，见 `.mcp.json.example`） |
 | CI 失败 | 修红 | 自动读 |
 | 代码 `TODO`/`FIXME` | 边写边记的小活 | 自动读 |
 
-**所以最简单的开干姿势**：
+### 新项目（绿地从零开始）
 
 ```
 1. 新建空 git 仓库（连好 GitHub 远程）
 2. bash install-loop.sh <你的项目>，填好 .claude/loop.env（模式+语言+命令）
-3. 在项目根写 需求文档.md —— 把你的想法写成一条条功能需求 + 完成标准
-4. 跑 /loop-cycle：triage 读需求文档→拆任务→generator 实现→evaluator 验证→（C档）合并
+3. 在项目根写 需求文档.md —— 把客户的想法写成一条条功能需求 + 完成标准
+4. 跑 /loop-cycle：triage 读需求→拆任务→generator 实现→evaluator 验证→（C档）合并→交付客户
 5. 需求做完了就再往 需求文档.md / BACKLOG.md 追加新需求，循环继续
 ```
 
-> 需求写得越具体（接口/字段/完成标准越清晰），triage 拆得越准、交付越稳。写不清的会被丢进 `inbox.md` 等你补充，不会瞎猜。
+### 老项目（存量改造）
+
+老项目的关键差别：改之前要**先读懂需求关联的现有代码**，否则容易踩坏存量功能。这条循环已内建：triage 拆任务时会定位关联代码、generator 实现前会先读关联代码再做最小改动。
+
+```
+1. bash install-loop.sh <现有仓库>，完成上文 sidecar 文件的合并（CLAUDE.loop.md / .mcp.loop.json）
+2. 填好 .claude/loop.env（按现有项目的真实语言/目录/测试命令填，命令要能真跑通）
+3. 在项目根写 需求文档.md —— 把客户要改/要加的需求写清楚（最好点名涉及的模块/页面/接口）
+4. 跑 /loop-cycle：triage 读需求→读关联现有代码→拆任务（标注受影响文件）→generator 读代码后最小改动→evaluator 验证不破坏存量→（C档）合并→交付客户
+5. 建议先用 B 档（AUTO_MERGE=false 只开PR）跑几圈，确认改动安全再开 C 档
+```
+
+> 需求写得越具体（接口/字段/涉及模块/完成标准越清晰），triage 拆得越准、交付越稳。写不清的会被丢进 `inbox.md` 等你补充，不会瞎猜。
 
 `需求文档.md` 示例（最小）：
 ```markdown
@@ -84,6 +107,8 @@ bash install-loop.sh <目标项目目录>
 1. POST /todos 新建（字段 title）  | 完成标准: 返回201+id，pytest覆盖
 2. GET /todos 列出全部            | 完成标准: 返回数组，pytest覆盖
 技术约定: Python+FastAPI，内存存储，pytest
+# 老项目追加示例（点名涉及模块，triage 会先读这些代码）
+3. 给 GET /todos 加分页（涉及 app/routers/todos.py） | 完成标准: 支持 ?page&size，不破坏现有返回结构，pytest 覆盖新旧行为
 ```
 
 ## 启动
@@ -98,6 +123,7 @@ bash install-loop.sh <目标项目目录>
 
 | 路径 | 作用 |
 |------|------|
+| `doc/项目详解.md` | **项目详解**：分层架构、一圈逐步拆解、三道护栏、新老项目工作流、FAQ |
 | `CLAUDE.md` | 总纲：配置指引、项目规约、安全约定、急停 |
 | `.claude/loop.env` | **唯一配置文件**：模式/语言/命令/参数/档位 |
 | `.mcp.json` | 项目级 MCP（自带 Playwright，clone 即用） |
