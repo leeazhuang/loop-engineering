@@ -63,7 +63,7 @@ bash install-loop.sh <你的项目目录>
 
 它会把循环引擎（`.claude/`、`CLAUDE.md`、`.mcp.json` 等）拷进去，并重置运行状态。
 
-- **新项目**：先 `git init` 建个空仓库、连好 GitHub 远程，再装。安装脚本会**自动把 `MAIN_BRANCH` 同步成你的实际分支名**（修 `git init` 默认 `master` 与默认 `main` 不一致的坑），并在空仓库里**自动建一次初始提交**（循环开 `git worktree` 需要基线 commit）——所以装完就能直接 `/loop-cycle`。若机器没配 `git user.name/email` 导致自动提交失败，脚本会提示你手动补一次提交。
+- **新项目**：先 `git init` 建个空仓库、连好 GitHub 远程，再装。安装脚本会**自动把 `MAIN_BRANCH` 同步成你的实际分支名**（修 `git init` 默认 `master` 与默认 `main` 不一致的坑），在空仓库里**自动建一次初始提交**（循环开 `git worktree` 需要基线 commit），并**把主分支发布到 `origin`**（修「首圈开 PR 必崩」的坑：`gh pr create --base 主分支` 要求远程已存在该分支，而新仓库只在本地有提交、从没 push 过主分支）——所以装完就能直接 `/loop-cycle`。若机器没配 `git user.name/email` 导致自动提交失败、或没连远程/没登录导致推送失败，脚本会明确提示你手动补这一步。
 - **老项目**：直接装进现有仓库。为不破坏你已有的配置，脚本**不覆盖**而是放备用文件让你合并：
   - 已有 `.claude` → 自动备份成 `.claude.bak.<时间戳>`。
   - 已有 `CLAUDE.md` → 循环总纲放成 `CLAUDE.loop.md`，请把里面**「安全约定」一节**并进你的 `CLAUDE.md`。

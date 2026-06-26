@@ -202,10 +202,37 @@ NEED_MANUAL_COMMIT=0
 if [ "$IS_GIT" = "1" ] && [ "$HAS_COMMITS" = "0" ]; then
   echo "🧱 目标仓库尚无提交，创建初始提交（循环开 worktree 需要基线 commit）..."
   if git -C "$TARGET" add -A && git -C "$TARGET" commit -q -m "chore: 初始化 loop 脚手架与项目文件"; then
+    HAS_COMMITS=1
     echo "   ✓ 已创建初始提交（分支 ${REAL_BRANCH:-当前分支}）"
   else
     NEED_MANUAL_COMMIT=1
     echo "   ⚠ 自动初始提交失败（多半是未配置 git user.name/email）。" >&2
+  fi
+fi
+
+# 把主分支发布到 origin —— 修「首圈开 PR 必崩」的坑：
+# loop-persist 用 "gh pr create --base $MAIN_BRANCH" 开 PR，base 分支必须已存在于远程。
+# 新项目 git init 后只在本地建了初始提交、从没 push 过主分支 → 远程没有该分支 →
+# 首圈 gh pr create 直接报 "Base ref must be a branch / No commits between..."。
+# 这里在装好后、有提交、且配了 origin 远程时，把主分支推上去（远程已有则跳过）。
+# 推送失败（未配远程/没登录/无权限）只告警不中断——用户可稍后手动 push。
+NEED_MANUAL_PUSH=0
+if [ "$IS_GIT" = "1" ] && [ "$HAS_COMMITS" = "1" ] && [ -n "$REAL_BRANCH" ]; then
+  if git -C "$TARGET" remote get-url origin >/dev/null 2>&1; then
+    if git -C "$TARGET" ls-remote --exit-code --heads origin "$REAL_BRANCH" >/dev/null 2>&1; then
+      echo "   ✓ 主分支 $REAL_BRANCH 已在 origin，无需发布。"
+    else
+      echo "🚀 发布主分支到 origin（首圈开 PR 需要远程 base 分支）..."
+      if git -C "$TARGET" push -u origin "$REAL_BRANCH" >/dev/null 2>&1; then
+        echo "   ✓ 已推送 $REAL_BRANCH 到 origin。"
+      else
+        NEED_MANUAL_PUSH=1
+        echo "   ⚠ 推送 $REAL_BRANCH 到 origin 失败（未登录/无权限/远程未建好）。" >&2
+      fi
+    fi
+  else
+    NEED_MANUAL_PUSH=1
+    echo "   ⚠ 未检测到 origin 远程：首圈开 PR 需要主分支已在 GitHub。请先连远程并推送主分支。" >&2
   fi
 fi
 
@@ -227,4 +254,10 @@ if [ "$NEED_MANUAL_COMMIT" = "1" ]; then
   echo "❗ 仓库还没有任何提交，且自动初始提交失败。跑 /loop-cycle 前必须先手动提交一次（否则开 worktree 会失败）："
   echo "     git -C \"$TARGET\" config user.email you@example.com && git -C \"$TARGET\" config user.name you"
   echo "     git -C \"$TARGET\" add -A && git -C \"$TARGET\" commit -m \"chore: init\""
+fi
+if [ "$NEED_MANUAL_PUSH" = "1" ]; then
+  echo ""
+  echo "❗ 主分支尚未发布到 GitHub。首圈开 PR（gh pr create --base ${REAL_BRANCH:-主分支}）需要远程已有该分支，否则会报 'Base ref must be a branch'。开跑前先："
+  echo "     git -C \"$TARGET\" remote add origin <你的GitHub仓库URL>   # 若还没连远程"
+  echo "     git -C \"$TARGET\" push -u origin ${REAL_BRANCH:-主分支}"
 fi
