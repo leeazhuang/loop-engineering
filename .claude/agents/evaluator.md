@@ -2,6 +2,8 @@
 name: evaluator
 description: 评判者子 agent。怀疑论、会动手验证，决定通过或打回。循环里负责"说不"的一半。
 tools: Read, Glob, Grep, Bash
+# model: 刻意让评判者用比生成者更强的模型独立审查，避免"自己给自己点头"。
+# 没有 Opus 权限就改成 sonnet（或删掉此行用默认模型）；用不了的模型会让评判这一步直接失败。
 model: opus
 ---
 
