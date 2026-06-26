@@ -44,6 +44,7 @@ cat > "$TARGET/.claude/memory/loop-state.md" <<'EOF'
 - 下圈从这里继续：（首次运行前为空）
 
 ## 待办
+<!-- 任务格式：- [ ] [fe|be|both] (P1) 标题 | 来源 | 完成标准 -->
 
 ## 进行中
 
@@ -60,7 +61,7 @@ chmod +x "$TARGET/.claude/hooks/"*.sh 2>/dev/null || true
 
 echo ""
 echo "✅ 安装完成。下一步："
-echo "   1. 编辑 $TARGET/.claude/loop.env  填 TEST_CMD/LINT_CMD/BUILD_CMD/RUN_CMD/MAIN_BRANCH 等"
+echo "   1. 编辑 $TARGET/.claude/loop.env  先选 PROJECT_MODE(frontend/backend/fullstack)，再填对应侧 FE_*/BE_* 命令"
 echo "   2. 在 CLAUDE.md 的「项目规约」一节写本项目约定"
 echo "   3. (Windows) 确保 git-bash 的 bash 在 PATH；建议装 jq、gh"
 echo "   4. 想更安全：把 loop.env 的 AUTO_MERGE 设为 false（B档：只开PR不自动合并）"

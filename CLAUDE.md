@@ -10,7 +10,12 @@
 
 **所有命令和参数都在一个文件里：`.claude/loop.env`。** 套用到新项目时，你只改这一个文件，其余文件不用动。
 
-需要填的键：`TEST_CMD` / `LINT_CMD` / `BUILD_CMD` / `RUN_CMD` / `MAIN_BRANCH` / `AUTO_MERGE`(C档=true,B档=false) / `MAX_FIX_ATTEMPTS` / `PER_LOOP_BUDGET` / `DAILY_BUDGET` / `MAX_RETRIES` / `MCP_CONFIG`(可选)。
+先选 **`PROJECT_MODE`**：`frontend`(纯前端) / `backend`(纯后端) / `fullstack`(前后端)。然后填对应侧命令：
+- 含前端 → `FE_DIR` / `FE_TEST_CMD` / `FE_LINT_CMD` / `FE_BUILD_CMD` / `FE_RUN_CMD`
+- 含后端 → `BE_DIR` / `BE_TEST_CMD` / `BE_LINT_CMD` / `BE_BUILD_CMD` / `BE_RUN_CMD`
+- 通用 → `MAIN_BRANCH` / `AUTO_MERGE`(C档=true,B档=false) / `MAX_FIX_ATTEMPTS` / `PER_LOOP_BUDGET` / `DAILY_BUDGET` / `MAX_RETRIES` / `MCP_CONFIG`(可选)
+
+全栈模式下任务会被打 `[fe]`/`[be]`/`[both]` 层标签：generator 据此进对应目录，evaluator 据此选验证方式（前端走 Playwright 浏览器、后端走 API/测试），`gate-stop` 硬门两侧都跑。
 
 **项目规约**（命名/分层/测试约定等给模型读的自由文本）写在下方「项目规约」一节，不放 loop.env。
 

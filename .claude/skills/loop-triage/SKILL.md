@@ -17,8 +17,15 @@ description: 循环第一步「发现」。读 CI 失败、open issue、代码 T
 - **值得做**：边界清晰、能在一个 worktree 里独立完成、有明确的"完成"标准。
 - **做不了/需要人**：需求模糊、涉及架构决策、跨多个模块、需要产品判断。
 
+## 层标签（按 PROJECT_MODE）
+读 `.claude/loop.env` 的 `PROJECT_MODE`：
+- `frontend` → 所有任务标 `[fe]`。
+- `backend` → 所有任务标 `[be]`。
+- `fullstack` → 给每个任务判断它动的是哪侧，标 `[fe]` / `[be]` / `[both]`。判断依据：改动落在 `FE_DIR` 还是 `BE_DIR`、是 UI 还是接口/数据层。
+层标签决定后续 generator 进哪个目录、evaluator 用哪种验证方式。
+
 ## 输出
-- 值得做的 → 追加到 `.claude/memory/loop-state.md` 的「## 待办」区，每条含：标题、来源、优先级(P0/P1/P2)、完成标准。
+- 值得做的 → 追加到 `.claude/memory/loop-state.md` 的「## 待办」区，每条含：**层标签**、标题、来源、优先级(P0/P1/P2)、完成标准。
 - 做不了的 → 追加到 `.claude/memory/inbox.md`，写清为什么需要人。
 - 去重：已在「待办/进行中/已完成」里的不要重复添加。
 

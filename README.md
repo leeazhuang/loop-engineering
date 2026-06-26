@@ -14,19 +14,22 @@ bash install-loop.sh <目标项目目录>
 脚本会把 `.claude/`、`CLAUDE.md`、`.gitattributes` 拷进目标项目，并重置运行态记忆。
 若目标已有 `.claude`，会自动备份不覆盖。
 
-装完后**只需改一个文件**：`<目标>/.claude/loop.env`。填好这 11 个键即可：
+装完后**只需改一个文件**：`<目标>/.claude/loop.env`。
+
+**第一步选模式** `PROJECT_MODE`：`frontend` / `backend` / `fullstack`。
 
 | 键 | 改成 |
 |----|------|
-| `TEST_CMD` | 你的测试命令（如 `npm test`） |
-| `LINT_CMD` | 你的 lint 命令 |
-| `BUILD_CMD` | 你的构建命令 |
-| `RUN_CMD` | 你的启动命令（评判器动手验证用） |
+| `PROJECT_MODE` | `frontend`(纯前端) / `backend`(纯后端) / `fullstack`(前后端) |
+| `FE_DIR` / `FE_TEST_CMD` / `FE_LINT_CMD` / `FE_BUILD_CMD` / `FE_RUN_CMD` | 前端目录与命令（含前端时填） |
+| `BE_DIR` / `BE_TEST_CMD` / `BE_LINT_CMD` / `BE_BUILD_CMD` / `BE_RUN_CMD` | 后端目录与命令（含后端时填） |
 | `MAIN_BRANCH` | 主分支名（默认 main） |
 | `AUTO_MERGE` | `true`=C档自动合并 / `false`=B档只开PR |
 | `MAX_FIX_ATTEMPTS` | 验证打回重试上限（建议 3） |
 | `PER_LOOP_BUDGET` / `DAILY_BUDGET` / `MAX_RETRIES` | 预算上限数字 |
-| `MCP_CONFIG` | （可选）外部连接 MCP |
+| `MCP_CONFIG` | （可选）外部连接 MCP（前端验证建议接 Playwright） |
+
+**三模式行为**：纯前端只填+只验 FE；纯后端只填+只验 BE；全栈两组都填，任务自动打 `[fe]`/`[be]`/`[both]` 层标签——generator 进对应目录、evaluator 选对应验证（前端 Playwright 浏览器、后端 API/测试）、`gate-stop` 硬门两侧都跑（都得绿）。
 
 项目规约写在 `CLAUDE.md` 的「项目规约」一节（给模型读的自由文本，不放 loop.env）。
 
