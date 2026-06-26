@@ -20,6 +20,7 @@ description: 循环第四步「持久化」。开 PR，C 档下自动合并 main
 3. **更新状态**：
    - `loop-state.md`：把任务从「进行中」移到「## 已完成」，记录 PR 链接 / 合并 commit / 时间。
    - 清理用完的 worktree（cattle not pets）：`git worktree remove "../loop-<任务短名>"`（合并后分支可一并删除）。
+   - 删掉 gate-stop 用的定位文件，避免下一圈用到过期路径：`rm -f .claude/memory/current-worktree`。
 
 ## 约束
 - 绝不 `--no-verify`、绝不 `push --force` 到 `$MAIN_BRANCH`（`danger-guard.sh` 会拦）。

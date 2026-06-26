@@ -8,9 +8,24 @@
 set -u
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+MAIN_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 ENV_FILE="$SCRIPT_DIR/../loop.env"
 [ -f "$ENV_FILE" ] && . "$ENV_FILE"
+
+# 在哪棵树上跑全绿门？本圈改动在 git worktree 里（见 loop-implement），不在主仓库工作树。
+# loop-implement 开 worktree 时会把其绝对路径写进 .claude/memory/current-worktree。
+# 有它且指向有效目录 → 进 worktree 验本圈改动（门才守在改动上）；否则退回主仓库根（体检主分支基线）。
+WT_FILE="$SCRIPT_DIR/../memory/current-worktree"
+PROJECT_ROOT="$MAIN_ROOT"
+if [ -f "$WT_FILE" ]; then
+  WT="$(head -n1 "$WT_FILE" 2>/dev/null | tr -d '\r')"   # 去 Windows \r，不动路径里的空格
+  if [ -n "$WT" ] && [ -d "$WT" ]; then
+    PROJECT_ROOT="$WT"
+    echo "[gate-stop] 在当前 worktree 上验证本圈改动：$WT" >&2
+  else
+    echo "[gate-stop] ⚠ current-worktree 记录无效（'$WT'），退回主仓库根验证。" >&2
+  fi
+fi
 
 fail() {
   echo "[gate-stop] 阻断收尾：$1 未通过。请修复后再收尾，不要绕过本门。" >&2
