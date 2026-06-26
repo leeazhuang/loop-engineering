@@ -5,7 +5,12 @@
 
 ## 第 0 步 · 急停检测 + 重置单圈计数
 - 如果 `.claude/memory/STOP` 文件存在 → 立即结束本圈，什么都不做。
-- 否则：把 `.claude/memory/budget.json` 的 `loop_calls` 归零（单圈预算重新计），继续。
+- 否则：把 `.claude/memory/budget.json` 的 `loop_calls` 归零（单圈预算重新计）。**必须用带 `LOOP_CYCLE_RESET` 标记的命令**跑这次重置，否则上一圈打满单圈预算后，token-guard 会把这次重置本身也拦下，循环被自己锁死。固定用：
+  ```bash
+  # LOOP_CYCLE_RESET —— 此标记让 token-guard 豁免本次重置（见 hooks/token-guard.sh）
+  TODAY=$(date +%F); DC=$(jq -r '.daily_calls // 0' .claude/memory/budget.json 2>/dev/null || echo 0)
+  echo "{\"date\":\"$TODAY\",\"loop_calls\":0,\"daily_calls\":$DC}" > .claude/memory/budget.json
+  ```
 - 所有命令/参数都从 `.claude/loop.env` 读取（唯一配置文件）。
 
 ## 第 1 步 · 发现（discovery）

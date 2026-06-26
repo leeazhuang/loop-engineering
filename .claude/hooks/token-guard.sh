@@ -36,6 +36,22 @@ if ! command -v jq >/dev/null 2>&1; then
   esac
 fi
 
+# 单圈预算重置豁免（修「守卫把自己锁死」的坑）：
+# 一旦某圈打满 PER_LOOP_BUDGET，本守卫会拦下之后的每一次工具调用——包括 loop-cycle 第 0 步
+# 用来把 loop_calls 归零的那次调用本身。结果是循环被自己锁死，跨天（date 变化触发重置）前谁都解不开。
+# 约定：第 0 步的重置命令必须带 `LOOP_CYCLE_RESET` 标记。识别到它就直接把单圈计数清零并放行，
+# 不计数、不受单圈上限约束（每日计数保留，每日硬顶仍然有效，不会被它绕过）。
+case "$INPUT" in
+  *LOOP_CYCLE_RESET*)
+    mkdir -p "$(dirname "$BUDGET_FILE")"
+    DC=0
+    [ -f "$BUDGET_FILE" ] && DC=$(jq -r '.daily_calls // 0' "$BUDGET_FILE" 2>/dev/null)
+    case "$DC" in ''|*[!0-9]*) DC=0 ;; esac
+    echo "{\"date\":\"$TODAY\",\"loop_calls\":0,\"daily_calls\":$DC}" > "$BUDGET_FILE"
+    echo "[token-guard] 收到 LOOP_CYCLE_RESET：单圈计数已归零（每日计数保留 $DC），放行。" >&2
+    exit 0 ;;
+esac
+
 # 初始化 / 跨天重置
 if [ ! -f "$BUDGET_FILE" ] || [ "$(jq -r '.date' "$BUDGET_FILE" 2>/dev/null)" != "$TODAY" ]; then
   mkdir -p "$(dirname "$BUDGET_FILE")"
