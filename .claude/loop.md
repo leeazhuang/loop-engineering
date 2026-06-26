@@ -1,6 +1,7 @@
-# Loop 编排（裸 /loop 执行此文件）
+# Loop 编排（由 /loop-cycle 命令执行此文件）
 
-每次 `/loop` 触发，按顺序执行以下一圈。**严格按步骤，不要跳步。**
+`/loop-cycle`（见 `.claude/commands/loop-cycle.md`）触发时，按顺序执行以下一圈。**严格按步骤，不要跳步。**
+定时自动跑用间隔运行器驱动：`/loop 30m /loop-cycle`（间隔运行器来自 superpowers 的 loop skill；没有则用 OS cron / GitHub Actions 定时调 `/loop-cycle`）。
 
 ## 第 0 步 · 急停检测 + 重置单圈计数
 - 如果 `.claude/memory/STOP` 文件存在 → 立即结束本圈，什么都不做。
@@ -18,7 +19,7 @@
 
 ## 第 3 步 · 交付 + 生成（handoff）
 - 触发技能：`loop-implement`。
-- 它为该任务开一个隔离 worktree（`claude --worktree`），把任务派给 `generator` 子 agent 实现并自测。
+- 它用原生 `git worktree` 为该任务开一个隔离工作目录，把任务派给 `generator` 子 agent 实现并自测。
 
 ## 第 4 步 · 验证（verification）
 - 触发技能：`loop-review`。

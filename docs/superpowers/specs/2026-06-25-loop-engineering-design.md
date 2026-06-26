@@ -98,8 +98,8 @@
 
 | 零件 | 文件 | 内容 |
 |------|------|------|
-| 1 Automations | `loop.md` + `/loop` | 一圈编排；`/loop 30m` 启动；文档附上云 |
-| 2 Worktrees | `loop-implement` 内 | 每任务 `--worktree`，一圈一弃（cattle not pets） |
+| 1 Automations | `loop.md` + `/loop-cycle` | 一圈编排；`/loop-cycle` 跑一圈、`/loop 30m /loop-cycle` 定时启动；文档附上云 |
+| 2 Worktrees | `loop-implement` 内 | 每任务原生 `git worktree`，一圈一弃（cattle not pets） |
 | 3 Skills | `skills/*/SKILL.md` | 固化发现/实现/审查/收尾；规约用 `<project_conventions>` |
 | 4 Connectors | `settings.json` + 文档 | 不强绑 MCP，留 `<mcp_config>` 接 GitHub/issue/Slack |
 | 5 Sub-agents | `generator.md`、`evaluator.md` | 生成 vs 评判分离；评判默认怀疑、会动手、模型可换 |
@@ -152,6 +152,6 @@
 
 ## 8. 上手与升级路径
 
-- **启动**：填占位符 → `/loop 30m`（每 30 分钟一圈）。
+- **启动**：填占位符 → 手动 `/loop-cycle` 跑一圈；定时用 `/loop 30m /loop-cycle`。
 - **从小到大**（白皮书 §09）：先只开 triage（发现+列清单），跑通后逐步接 implement/review/persist。
 - **上云**（关机也跑）：把 `loop.md` 逻辑迁到 Cloud Routines 或 GitHub Actions schedule，注意云端最小间隔 1 小时、fresh clone 看不到本地文件。

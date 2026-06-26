@@ -5,6 +5,17 @@
 
 > ⚠️ 默认 **C 档：评判通过即自动合并 `main`**，风险最高。护栏全开。生产环境建议先用 B 档（见下）。
 
+## 前置条件（所有平台）
+
+跑起来需要下面这些，缺了对应环节会失败：
+- **Claude Code CLI**：本工程是 Claude Code 的脚手架，所有 skill / 子 agent / hook 都靠它执行。
+- **bash**：hook 由 `bash .claude/hooks/*.sh` 调起。Windows 用 git-bash 的 bash（装了 Git 即有），需在 PATH。
+- **git**：循环用 `git worktree` 隔离每个任务。
+- **jq + gh**：jq 是预算守卫/危险拦截精确解析的硬前提，gh 用于开 PR/合并；`install-loop.sh` 会自动装、缺则中止，装好后 `gh auth login` 登录一次。
+- **Node / npx**：前端评判用的 Playwright MCP 靠 `npx @playwright/mcp`（首次自动下载）；纯后端可不需要。
+
+**目标项目要求**：必须是 **git 仓库**、有主分支（默认 `main`）、且**已连 GitHub 远程**——`loop-implement` 用 `git worktree` 隔离、`loop-persist` 用 `gh pr create` 开 PR，缺远程会卡在持久化阶段。
+
 ## 套用到任意项目（一键安装）
 
 ```bash
@@ -26,7 +37,7 @@ bash install-loop.sh <目标项目目录>
 | `MAIN_BRANCH` | 主分支名（默认 main） |
 | `AUTO_MERGE` | `true`=C档自动合并 / `false`=B档只开PR |
 | `MAX_FIX_ATTEMPTS` | 验证打回重试上限（建议 3） |
-| `PER_LOOP_BUDGET` / `DAILY_BUDGET` / `MAX_RETRIES` | 预算上限数字 |
+| `PER_LOOP_BUDGET` / `DAILY_BUDGET` | 工具调用预算上限数字（`MAX_RETRIES` 为预留，暂未启用） |
 
 > **MCP（项目级，随仓库附带）**：项目根的 `.mcp.json` 已预配 **Playwright**，clone 即用——别人不需要任何全局配置，前端评判开箱即用。要给某项目加 GitHub/数据库等专属连接器，参考 `.mcp.json.example` 合并进 `.mcp.json`；**token 一律用 `${ENV_VAR}`**，真实值放各自环境变量，绝不硬编码进仓库。
 
@@ -34,17 +45,18 @@ bash install-loop.sh <目标项目目录>
 
 项目规约写在 `CLAUDE.md` 的「项目规约」一节（给模型读的自由文本，不放 loop.env）。
 
-## Windows 必做（一次性）
+## Windows 专属注意（一次性）
 
-1. **bash 在 PATH**：hook 由 `settings.json` 里 `bash .claude/hooks/*.sh` 调用，需 git-bash 的 bash 可用（Windows 装了 Git 即有）。
-2. **jq + gh（必装，`install-loop.sh` 会自动装）**：jq 是预算守卫/危险拦截精确解析的硬前提，gh 是开 PR/合并的硬前提——缺任一安装脚本直接中止。脚本装不上时手动装：`winget install jqlang.jq`、`winget install GitHub.cli`。
-3. **gh 登录（必做一次）**：`gh auth login` —— 自动安装不含登录，开 PR/合并前必须登录（或改用 GitHub MCP）。
-4. **换行**：`.gitattributes` 已强制 `.sh` 为 LF（CRLF 会让 bash 报 `\r` 错）。
-5. **首次冒烟验证**：让 agent 试跑一条 `rm -rf` 看 `danger-guard` 是否拦下（退出码 2）。不灵则说明 hook 没被正确调用，改用 `cmd /c` 包装命令重试。
+通用依赖见上「前置条件」。Windows 还要注意：
+1. **bash 必须在 PATH**：用 git-bash 的 bash，hook 才能被 `settings.json` 里 `bash .claude/hooks/*.sh` 调起。
+2. **换行**：`.gitattributes` 已强制 `.sh` 为 LF（CRLF 会让 bash 报 `\r` 错）。
+3. **首次冒烟验证**：让 agent 试跑一条 `rm -rf` 看 `danger-guard` 是否拦下（退出码 2）。不灵则说明 hook 没被正确调用，改用 `cmd /c` 包装命令重试。
 
 ## 启动
 
-在目标项目里运行 `/loop 30m`（每 30 分钟一圈）。
+1. **手动跑一圈**：在目标项目里运行 `/loop-cycle`（本工程自带的命令，见 `.claude/commands/loop-cycle.md`），它按 `.claude/loop.md` 执行一整圈。先用它把流程跑顺。
+2. **定时自动跑**：用间隔运行器驱动该命令，例如每 30 分钟一圈：`/loop 30m /loop-cycle`。
+   - `/loop` 间隔运行器来自 superpowers 的 loop skill；**没有它也行**——用 OS cron / GitHub Actions 定时调用 `/loop-cycle` 即可。
 
 > **首次会弹 MCP 批准框**：第一次加载本仓库的 `.mcp.json` 时，Claude Code 出于安全会弹窗让你确认是否信任并启用其中的 MCP 服务器（如 Playwright）。这是正常机制，点同意即可；拒绝则前端浏览器评判用不了。需要 Node/npx 可用（`npx @playwright/mcp` 首次会自动下载）。
 
@@ -57,8 +69,9 @@ bash install-loop.sh <目标项目目录>
 | `.mcp.json` | 项目级 MCP（自带 Playwright，clone 即用） |
 | `.mcp.json.example` | 加 GitHub/DB 等连接器的参考（token 用 env） |
 | `install-loop.sh` | 一键把模板装进任意项目 |
-| `.claude/loop.md` | 一圈五动作的编排（裸 `/loop` 执行） |
-| `.claude/settings.json` | 注册 3 个 hook + MCP 占位 |
+| `.claude/loop.md` | 一圈五动作的编排（由 `/loop-cycle` 执行） |
+| `.claude/commands/loop-cycle.md` | `/loop-cycle` 命令：跑一圈的入口 |
+| `.claude/settings.json` | 注册 3 个 hook（MCP 配在 `.mcp.json`） |
 | `.claude/skills/loop-triage` | 发现 |
 | `.claude/skills/loop-implement` | 交付（开 worktree + 派生成者） |
 | `.claude/skills/loop-review` | 验证（派评判者） |
@@ -77,7 +90,7 @@ bash install-loop.sh <目标项目目录>
 | 动作 | 零件 | 文件 |
 |------|------|------|
 | 发现 | Skills | `loop-triage` |
-| 交付 | Worktrees | `loop-implement`（`--worktree`） |
+| 交付 | Worktrees | `loop-implement`（`git worktree`） |
 | 验证 | Sub-agents | `loop-review` + `generator`/`evaluator` + `gate-stop.sh` |
 | 持久化 | Memory + Connectors | `loop-persist` + `memory/*` + MCP |
 | 调度 | Automations | `loop.md` + `/loop` |
@@ -109,4 +122,9 @@ AUTO_MERGE="true"    # C档：评判+全绿后自动合并 main
 别一上来就全自动合并。建议：
 1. 先只跑 `loop-triage`（发现 + 列清单，不改代码），跑顺。
 2. 接上 `loop-implement` + `loop-review`，但停在开 PR（B 档）。
-3. 信任建立后，再开 C 档自动合并，并确认四道护栏都生效。
+3. 信任建立后，再开 C 档自动合并，并确认护栏都生效（`gate-stop` / `token-guard` / `danger-guard` 三道 hook + 独立评判者）。
+
+## 许可证与致谢
+
+- 本项目以 **MIT License** 开源（见 `LICENSE`），可自由使用、修改、商用。
+- 设计依据《Loop Engineering 橙皮书》（作者 alchaincyf，MIT 许可）：<https://github.com/alchaincyf/loop-engineering-orange-book>。本仓库是依其理念的独立实现；橙皮书 PDF 为第三方版权材料，已通过 `.gitignore` 排除，不随本仓库分发。

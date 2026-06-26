@@ -42,4 +42,4 @@
 
 ## 一圈流程
 
-详见 `.claude/loop.md`。启动：填好 `.claude/loop.env` 后运行 `/loop 30m`。
+详见 `.claude/loop.md`。启动：填好 `.claude/loop.env` 后，手动跑一圈用 `/loop-cycle`；定时自动跑用 `/loop 30m /loop-cycle`（间隔运行器，见 README「启动」）。
