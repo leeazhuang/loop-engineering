@@ -46,6 +46,8 @@ bash install-loop.sh <目标项目目录>
 
 在目标项目里运行 `/loop 30m`（每 30 分钟一圈）。
 
+> **首次会弹 MCP 批准框**：第一次加载本仓库的 `.mcp.json` 时，Claude Code 出于安全会弹窗让你确认是否信任并启用其中的 MCP 服务器（如 Playwright）。这是正常机制，点同意即可；拒绝则前端浏览器评判用不了。需要 Node/npx 可用（`npx @playwright/mcp` 首次会自动下载）。
+
 ## 文件地图
 
 | 路径 | 作用 |
