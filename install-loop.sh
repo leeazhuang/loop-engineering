@@ -20,6 +20,13 @@ if [ ! -d "$TARGET" ]; then
   exit 1
 fi
 
+# 整条循环硬依赖 git（worktree 隔离、gh 开 PR、合并主分支）。目标若不是 git 仓库，
+# 安装能成功但跑起来才莫名失败——这里提前清楚告警（不强制中止：用户可能装完再 git init）。
+if ! git -C "$TARGET" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  echo "⚠️  目标不是 git 仓库：$TARGET" >&2
+  echo "    循环依赖 git worktree / gh 开 PR / 主分支。请在该目录先：git init && 连好 GitHub 远程，再开跑。" >&2
+fi
+
 SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # ============================================================
@@ -79,6 +86,17 @@ echo "📦 拷贝模板到 $TARGET ..."
 cp -r "$SRC/.claude"          "$TARGET/.claude"
 cp -n "$SRC/.gitattributes"   "$TARGET/.gitattributes"   2>/dev/null || true
 cp -n "$SRC/.mcp.json.example" "$TARGET/.mcp.json.example" 2>/dev/null || true
+
+# 确保目标 .gitignore 忽略循环的运行态文件（current-worktree 每圈生成，绝不该入客户仓库）。
+# 新项目 git init 后无 .gitignore→创建；老项目有→缺哪条补哪条，不动其它内容。
+GI="$TARGET/.gitignore"
+[ -f "$GI" ] || : > "$GI"
+ensure_ignore() {
+  local pat="$1"
+  grep -qxF "$pat" "$GI" 2>/dev/null || printf '%s\n' "$pat" >> "$GI"
+}
+ensure_ignore ".claude/memory/current-worktree"
+ensure_ignore ".mcp.local.json"
 
 # 标记老项目（已有源码/CLAUDE.md/.mcp.json 的存量仓库），收尾时给出对应提示
 IS_BROWNFIELD=0
