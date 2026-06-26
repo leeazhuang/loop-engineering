@@ -1,5 +1,6 @@
 {
-  "$comment": "Loop 工程 hooks 注册。三道确定性 gate：全绿门(Stop) + 预算守卫(PreToolUse) + 危险拦截(PreToolUse)。Windows 必须用 'bash' 显式调用 .sh（cmd/PowerShell 不能直接执行 .sh）；要求 git-bash 的 bash 在 PATH 上。macOS/Linux 同样适用。MCP connector 占位见下。",
+  "$comment": "Loop 工程 hooks 注册。三道确定性 gate：全绿门(Stop) + 预算守卫(PreToolUse) + 危险拦截(PreToolUse)。Windows 必须用 'bash' 显式调用 .sh（cmd/PowerShell 不能直接执行 .sh）；要求 git-bash 的 bash 在 PATH 上。macOS/Linux 同样适用。",
+  "$mcp_note": "MCP 不在本文件配。Playwright 等通用 MCP 建议装全局（claude mcp add -s user playwright ...），所有项目自动可用，本模板无需重复。仅当本项目需要专属连接器（如该项目自己的 GitHub 仓库/数据库）时，才在项目根新建 .mcp.json，格式见 .mcp.json.example。",
   "hooks": {
     "Stop": [
       {
@@ -32,11 +33,5 @@
         ]
       }
     ]
-  },
-  "$mcp_placeholder": {
-    "$comment": "可选：接外部系统（白皮书零件4 Connectors）。把 <mcp_config> 换成真实配置，例如 GitHub / issue tracker / Slack。MCP 服务器一般配在 .mcp.json 或此处的 mcpServers 字段。",
-    "mcpServers": {
-      "<mcp_config>": {}
-    }
   }
 }

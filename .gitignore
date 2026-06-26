@@ -1,1 +1,3 @@
 *.pdf
+# 真实 MCP 配置可能含 token，不提交；只提交 .mcp.json.example
+.mcp.json

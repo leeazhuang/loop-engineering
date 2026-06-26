@@ -27,7 +27,9 @@ bash install-loop.sh <目标项目目录>
 | `AUTO_MERGE` | `true`=C档自动合并 / `false`=B档只开PR |
 | `MAX_FIX_ATTEMPTS` | 验证打回重试上限（建议 3） |
 | `PER_LOOP_BUDGET` / `DAILY_BUDGET` / `MAX_RETRIES` | 预算上限数字 |
-| `MCP_CONFIG` | （可选）外部连接 MCP（前端验证建议接 Playwright） |
+| `MCP_CONFIG` | （可选，仅作标记）是否依赖外部连接 |
+
+> **MCP 放全局还是项目级？** Playwright 等通用 MCP 装**全局**（`claude mcp add -s user playwright ...`），所有项目自动可用，模板不重复配。只有项目专属连接器（该项目自己的 GitHub/数据库）才在项目根放 `.mcp.json`（格式见 `.mcp.json.example`，含 token 别提交，已 gitignore）。
 
 **三模式行为**：纯前端只填+只验 FE；纯后端只填+只验 BE；全栈两组都填，任务自动打 `[fe]`/`[be]`/`[both]` 层标签——generator 进对应目录、evaluator 选对应验证（前端 Playwright 浏览器、后端 API/测试）、`gate-stop` 硬门两侧都跑（都得绿）。
 
