@@ -20,6 +20,10 @@
           {
             "type": "command",
             "command": "bash .claude/hooks/danger-guard.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/merge-guard.sh"
           }
         ]
       },

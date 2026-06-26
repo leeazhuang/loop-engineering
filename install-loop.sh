@@ -101,8 +101,11 @@ cp -n "$SRC/.mcp.json.example" "$TARGET/.mcp.json.example" 2>/dev/null || true
 if [ "$IS_GIT" = "1" ] && [ -n "$REAL_BRANCH" ]; then
   ENVF="$TARGET/.claude/loop.env"
   if grep -q '^MAIN_BRANCH=' "$ENVF" 2>/dev/null; then
-    # 用 | 作 sed 分隔符（替换文本里含 # 注释和 / 路径，不能用它们当分隔符）
-    sed -i "s|^MAIN_BRANCH=.*|MAIN_BRANCH=\"$REAL_BRANCH\"               # 主分支名（安装时自动同步为目标仓库当前分支）|" "$ENVF"
+    # 用 | 作 sed 分隔符（替换文本里含 # 注释和 / 路径，不能用它们当分隔符）。
+    # 刻意不用 `sed -i`：GNU 的 -i 后缀可选、BSD(macOS) 必须带后缀，原地编辑两家语义不同，
+    # macOS 上 `sed -i "expr"` 会把表达式当备份后缀而报错（set -e 下整个安装 abort）。
+    # 改用「普通 sed + 重定向 + mv」——纯 POSIX，GNU/BSD/git-bash 行为一致（同 token-guard.sh 的写法）。
+    sed "s|^MAIN_BRANCH=.*|MAIN_BRANCH=\"$REAL_BRANCH\"               # 主分支名（安装时自动同步为目标仓库当前分支）|" "$ENVF" > "$ENVF.tmp" && mv "$ENVF.tmp" "$ENVF"
     echo "   ✓ MAIN_BRANCH 已同步为目标仓库分支：$REAL_BRANCH"
   fi
 fi
