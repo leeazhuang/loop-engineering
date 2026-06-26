@@ -116,6 +116,7 @@ ensure_ignore() {
   grep -qxF "$pat" "$GI" 2>/dev/null || printf '%s\n' "$pat" >> "$GI"
 }
 ensure_ignore ".claude/memory/current-worktree"
+ensure_ignore ".worktrees/"
 ensure_ignore ".mcp.local.json"
 
 # 标记老项目（已有源码/CLAUDE.md/.mcp.json 的存量仓库），收尾时给出对应提示

@@ -4,3 +4,6 @@
 
 # gate-stop 定位当前 worktree 的运行态文件（每圈由 loop-implement 写、loop-persist 删），不入库
 .claude/memory/current-worktree
+
+# 每圈的隔离工作树放仓库内 .worktrees/（刻意不放同级 ../，避免 Claude Code 弹"访问工作区外目录"确认框）。运行态产物，不入库。
+.worktrees/

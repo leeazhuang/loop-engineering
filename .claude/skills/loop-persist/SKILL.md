@@ -30,7 +30,7 @@ description: 循环第四步「持久化」。开 PR，C 档下自动合并 main
    - 切换档位只需改 loop.env 里的 `AUTO_MERGE`，不用动这个文件。
 5. **更新状态**：
    - `loop-state.md`：把任务从「进行中」移到「## 已完成」，记录 PR 链接 / 合并 commit / 时间。
-   - 清理用完的 worktree（cattle not pets）：`git worktree remove "../loop-<任务短名>" --force`。
+   - 清理用完的 worktree（cattle not pets）：`git worktree remove ".worktrees/loop-<任务短名>" --force`。
    - 删分支：**别用 `git branch -D`**——squash 合并后本地分支不算"已合并"，`git branch -d` 会失败、退到 `-D` 又会被 `danger-guard` 拦（强删分支是红线）。正确做法：
      - 远程分支：`git push origin --delete loop/<任务短名>`（合并后清理，允许）。
      - 本地分支引用：`git update-ref -d refs/heads/loop/<任务短名>`（删 ref，不触红线）。
