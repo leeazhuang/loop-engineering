@@ -119,6 +119,7 @@ ensure_ignore() {
   grep -qxF "$pat" "$GI" 2>/dev/null || printf '%s\n' "$pat" >> "$GI"
 }
 ensure_ignore ".claude/memory/current-worktree"
+ensure_ignore ".claude/memory/loop.lock.d/"
 ensure_ignore ".worktrees/"
 ensure_ignore ".mcp.local.json"
 
@@ -148,6 +149,7 @@ else
 fi
 
 # 重置运行态记忆（不要把模板项目的状态带过去）
+rm -rf "$TARGET/.claude/memory/loop.lock.d"   # 清掉可能随模板带过来的残留单飞锁，否则新项目首圈会被误判为「已有圈在跑」而跳过
 echo '{"date":"1970-01-01","loop_calls":0,"daily_calls":0}' > "$TARGET/.claude/memory/budget.json"
 cat > "$TARGET/.claude/memory/loop-state.md" <<'EOF'
 # Loop 状态文件（记忆）

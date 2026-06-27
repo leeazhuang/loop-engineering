@@ -3,8 +3,12 @@
 `/loop-cycle`（见 `.claude/commands/loop-cycle.md`）触发时，按顺序执行以下一圈。**严格按步骤，不要跳步。**
 定时自动跑用间隔运行器驱动：`/loop 30m /loop-cycle`（间隔运行器来自 superpowers 的 loop skill；没有则用 OS cron / GitHub Actions 定时调 `/loop-cycle`）。
 
-## 第 0 步 · 急停检测 + 重置单圈计数
-- 如果 `.claude/memory/STOP` 文件存在 → 立即结束本圈，什么都不做。
+## 第 0 步 · 急停检测 + 抢锁 + 重置单圈计数
+- 如果 `.claude/memory/STOP` 文件存在 → 立即结束本圈，什么都不做（此时还没抢锁，无需释放）。
+- **抢单飞锁**（防「上一圈没跑完，下一圈又开始」做重同一任务）：跑 `bash .claude/hooks/loop-lock.sh acquire`。
+  - 退出码 `10`（已有别的圈在跑）→ **立即结束本圈，什么都不做，且不要 release**（锁是别人的）。
+  - 退出码 `0`（拿到锁，或偷了过期锁接管）→ 继续往下。
+  - 拿到锁后，**本圈无论从哪条路径结束，结束前都必须跑 `bash .claude/hooks/loop-lock.sh release`**（见第 1/4/6 步）。崩溃漏放由锁的过期兜底自动恢复。
 - 否则：把 `.claude/memory/budget.json` 的 `loop_calls` 归零（单圈预算重新计）。**必须用带 `LOOP_CYCLE_RESET` 标记的命令**跑这次重置，否则上一圈打满单圈预算后，token-guard 会把这次重置本身也拦下，循环被自己锁死。固定用：
   ```bash
   # LOOP_CYCLE_RESET —— 此标记让 token-guard 豁免本次重置（见 hooks/token-guard.sh）
@@ -16,7 +20,7 @@
 ## 第 1 步 · 发现（discovery）
 - 触发技能：`loop-triage`（不要在这里贴大段指令）。
 - 它会读**需求文档**（项目根 `需求文档.md` / `需求/*.md` / `BACKLOG.md`，绿地从零造东西的主入口）、CI 失败、open issue、代码里的 `TODO`/`FIXME`，把值得做的拆成任务写进 `.claude/memory/loop-state.md` 的「待办」区；处理不了的写进 `.claude/memory/inbox.md`。
-- 如果「待办」为空 → 结束本圈（没有活，不空转）。
+- 如果「待办」为空 → **先跑 `bash .claude/hooks/loop-lock.sh release` 放锁**，再结束本圈（没有活，不空转）。
 
 ## 第 2 步 · 取任务
 - 从 `loop-state.md`「待办」里取**优先级最高的 1 个**任务，移到「进行中」。
@@ -30,7 +34,7 @@
 - 触发技能：`loop-review`。
 - 它派 `evaluator` 子 agent（指令不同、可换模型、默认怀疑、会动手跑命令）审查。
 - 评判不过 → 退回 `generator` 修改，最多 `$MAX_FIX_ATTEMPTS` 次（见 loop.env）。
-- 仍不过 → **不推进**，把任务连同失败原因写进 `inbox.md`，跳到第 6 步。
+- 仍不过 → **不推进**，把任务连同失败原因写进 `inbox.md`，跳到第 6 步（第 6 步会放锁）。
 - 注意：合并前还有 `gate-stop.sh` 硬门（test/lint/build 全绿），LLM 跳不过。
 
 ## 第 5 步 · 持久化（persistence）
@@ -38,9 +42,11 @@
 - 开 PR；`AUTO_MERGE=true`（C 档）：全绿 + 评判通过 → 自动合并到 `$MAIN_BRANCH`；`AUTO_MERGE=false`（B 档）：只开 PR 等人（均见 loop.env）。
 - 更新 `loop-state.md`：任务移到「已完成」，记录 PR/合并信息。
 
-## 第 6 步 · 调度游标（scheduling）
+## 第 6 步 · 调度游标（scheduling）+ 放锁
 - 更新 `loop-state.md` 的「游标」：记录本圈处理到哪、下圈从哪继续。
+- **放单飞锁**：跑 `bash .claude/hooks/loop-lock.sh release`（让下一圈能进来；这是所有结束路径的统一出口）。
 - 结束本圈。下一次 `/loop` 自动从这里接着跑。
 
 ---
 全程：`token-guard.sh` 在每次工具调用前守预算，超限即停；`danger-guard.sh` 拦截危险命令。
+并发：`loop-lock.sh` 单飞锁保证「同一时刻只有一圈在跑」——上一圈没跑完，下一圈 acquire 拿不到锁就整圈跳过，避免同一任务被做两遍；崩溃漏放由锁的过期时间（`LOOP_LOCK_TIMEOUT`）自动接管。
